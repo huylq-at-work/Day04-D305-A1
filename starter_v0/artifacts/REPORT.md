@@ -10,6 +10,12 @@
 - Members:
 - Provider/model:
 
+### Đóng góp của Nguyễn Chí Hướng — Role 2: Tool Engineer
+
+- **Nhiệm vụ:** Thiết kế và phát triển tool mới; viết `TOOL.md` và YAML declaration; đăng ký trong `TOOL_FUNCTIONS`; smoke-test; bàn giao cho R1/R3/R4 và tạo PR tích hợp.
+- **Tiến độ:** Hoàn thành 4/4 tool mới; smoke-test PASS; code và registry đã merge vào `main`.
+- **Kết quả:** Hoàn thành `dedupe`, `save_note`, `rank_sources`, `extract_entities`; mọi hàm trả `dict`, arguments có default và không cần API key mới. `save_note` có confirmation boundary và chặn ghi file không an toàn.
+
 ---
 
 # PHẦN A — Giới thiệu agent
@@ -109,9 +115,11 @@ UI is core deliverable, not bonus. Do not list it here.
 
 | Category | Evidence File | What Worked | Risk / Guardrail |
 |---|---|---|---|
-| Must-have: tool mới đầu tiên |  |  |  |
-| Optional built-in |  |  |  |
-| Bonus: tool mới thứ 4 trở đi |  |  |  |
+| Must-have: `dedupe` | `tools/dedupe/tool.py`, `tools/dedupe/TOOL.md` | Quicktest qua `TOOL_FUNCTIONS` PASS; gộp đúng URL/title trùng, bỏ `utm_*` và giữ item đầu tiên | Không coi item thiếu URL/title là trùng; input sai trả error có cấu trúc |
+| Tool mới bổ sung: `save_note` | `tools/save_note/tool.py`, `tools/save_note/TOOL.md` | Dry-run trả `needs_confirmation`; chỉ ghi `notes/*.md` khi `confirmed=true` | Chặn path traversal, tên file nguy hiểm và ghi đè file tồn tại |
+| Tool mới bổ sung: `rank_sources` | `tools/rank_sources/tool.py`, `tools/rank_sources/TOOL.md` | Xếp Tier 1/2/3 theo `source-citation-policy.md`; lọc đúng bằng `min_tier` | Phân loại bảo thủ; nguồn thiếu metadata ở Tier 3 và cần review thủ công |
+| Bonus: `extract_entities` — tool mới thứ 4 | `tools/extract_entities/tool.py`, `tools/extract_entities/TOOL.md` | Bóc person/organization/handle tiếng Anh và tiếng Việt; gộp mentions; lọc theo `kinds` | Đây là heuristic, nên trả `method`/`confidence` và không coi candidate là fact xác minh |
+| Optional built-in | Không sử dụng trong phạm vi Role 2 | Không claim evidence cho Telegram/PDF | Chỉ report optional tool khi nhóm thực sự dùng |
 
 ## B6. Reflection
 
@@ -119,3 +127,10 @@ UI is core deliverable, not bonus. Do not list it here.
 - Which fixes belonged in `tools.yaml`?
 - Which failure needed manual review instead of automatic grading?
 - What would you improve next?
+
+### Reflection của Role 2
+
+- Quy tắc routing tổng thể và thứ tự nhiều tool thuộc `system_prompt.md`; mô tả DÙNG/KHÔNG dùng, schema, enum và default của từng tool thuộc `tools.yaml`.
+- `save_note` cần bảo vệ ở cả declaration lẫn implementation: `confirmed=false` tuyệt đối không được ghi file.
+- Kết quả `rank_sources` và `extract_entities` cần review thủ công vì chúng dùng policy/heuristic, không phải bằng chứng xác minh tuyệt đối.
+- Bước tiếp theo là bổ sung regression test tự động cho bốn tool và lưu quicktest output làm evidence tái hiện được.
