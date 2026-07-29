@@ -64,10 +64,10 @@ Fill from `artifacts/version_log.csv` and `runs/*.json`.
 
 | Version | Prompt/tool change | Hypothesis | Metric name | Before | After | Run File |
 |---|---|---|---|---:|---:|---|
-| v0 | baseline |  |  |  |  |  |
-| v1 |  |  |  |  |  |  |
-| v2 |  |  |  |  |  |  |
-| v3 |  |  |  |  |  |  |
+| v0 | baseline | N/A | case_accuracy | N/A | 0.500 | `v0_B_group_openai_...json` |
+| v1 | Thêm rules vào prompt, sửa tools | Khắc phục các lỗi thiếu clarify và phân ranh giới công cụ | case_accuracy | 0.500 | - | `v1_B_group_openai_...json` |
+| v2 | Bổ sung rules cho tools mới | Cải thiện độ chính xác khi dùng tool mới | case_accuracy | 0.500 | 0.875 | `v2_B_group_openai_20260729T114922528868.json` |
+| v3 | | | | | | |
 
 ## B2. Failure analysis
 
@@ -75,7 +75,12 @@ Use actual failures from `results[*].result.failures`.
 
 | Case ID | Failure Type | Actual Tool Calls | What Failed | Fix |
 |---|---|---|---|---|
-|  |  |  |  |  |
+| R08_out_of_scope | out_of_scope | `send` | Lẽ ra không gọi tool (`no_tool`), nhưng agent lại gọi `send` để trả lời toán. | Thêm luật cấm gọi tool `send` với các câu hỏi toán học/code. |
+| R10_missing_handle | missing_info | `timeline(screenname="sama")` | Thiếu `clarify`, agent tự đoán bừa handle "sama". | Bắt buộc dùng `clarify` khi user chưa cung cấp rõ tài khoản. |
+| R11_missing_url | missing_info | `fetch(url="https://example.com/article")` | Thiếu `clarify`, agent tự bịa URL ảo. | Bắt buộc dùng `clarify` xin link khi user bảo "bài này" mà chưa có URL. |
+| R12_confirm_before_send | wrong_boundary | `send(text="...")` | Thiếu `clarify(response_type="yes_no")` trước khi gửi. | Thêm luật bắt buộc hỏi xác nhận (yes_no) trước khi gọi tool `send`. |
+| R13_parallel_web_and_tweets | wrong_tool | `lookup(query="AI news")` | Gọi `lookup` sai arg, gộp chữ "news" vào query thay vì dùng `topic="news"`. | Làm rõ mô tả của arg `query` và `topic` trong `tools.yaml`. |
+| R14_out_of_scope_coding | out_of_scope | `send` | Gọi tool `send` để trả lời câu hỏi viết code. | Cấm dùng `send` để trả lời code, yêu cầu từ chối thẳng. |
 
 ## B3. Team eval cases
 
@@ -89,9 +94,18 @@ not belong here.
 
 File template để trống có chủ đích; nhóm phải tự thiết kế đủ 10 case.
 
-| Case ID | What It Tests | Expected Tool/Behavior | Result |
+| Case ID | What It Tests | Expected Tool/Behavior | Result (V2) |
 |---|---|---|---|
-|  |  |  |  |
+| G01_extract_entities_usage | Bóc tách tên người/tổ chức | `extract_entities` | PASS |
+| G02_rank_sources_usage | Lọc nguồn theo Tier 1 | `rank_sources` | FAIL |
+| G03_out_of_scope_translation | Từ chối dịch thuật | `no_tool` | PASS |
+| G04_confirm_before_send_text | Hỏi xác nhận trước khi gửi | `clarify(response_type="yes_no")` | PASS |
+| G05_missing_account_pronoun | Xin username khi thiếu | `clarify` | PASS |
+| G06_switch_account_to_topic | Chuyển đổi linh hoạt ngữ cảnh tìm kiếm | `social_search` | PASS |
+| G07_widen_timeframe_after_correction | Cập nhật khoảng thời gian | `lookup` | FAIL |
+| G08_save_note_after_confirm | Lưu Markdown sau xác nhận | `save_note` | PASS |
+| G09_missing_url_not_supplied_by_context | Xin URL bài viết chưa rõ | `clarify` | PASS |
+| G10_dedupe_tool_usage | Lọc bài báo trùng tên | `dedupe` | FAIL |
 
 ## B4. Live chat evidence
 
