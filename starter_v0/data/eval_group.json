@@ -2,38 +2,73 @@
   "dataset_id": "day04_v2_research_group",
   "dataset_role": "group",
   "description": "10 case do nhóm tự viết: 5 single-turn dùng query + 5 multi-turn dùng turns. Case bám vào failure quan sát được ở run v0 (case_accuracy 0.70): agent bịa argument thay vì hỏi lại, gọi send để trả lời câu ngoài phạm vi, bỏ bước xác nhận trước hành động, và trích sai query/topic. Mỗi case chọn góc khác với eval_base.json.",
-  "allowed_failure_types": ["wrong_tool", "wrong_arg_value", "wrong_boundary", "unnecessary_tool", "out_of_scope", "missing_info"],
+  "allowed_failure_types": [
+    "wrong_tool",
+    "wrong_arg_value",
+    "wrong_boundary",
+    "unnecessary_tool",
+    "out_of_scope",
+    "missing_info"
+  ],
   "cases": [
     {
-      "id": "G01_url_with_topic_lure",
-      "phase": "B", "suite": "group",
-      "query": "Bài này nói gì về Gemini vậy bạn: https://blog.google/technology/ai/google-gemini-ai/",
+      "id": "G01_extract_entities_usage",
+      "phase": "B",
+      "suite": "group",
+      "query": "Bóc tách giúp mình tên người và tên tổ chức từ đoạn sau: 'Hôm qua Sam Altman của OpenAI và Bill Gates từ Microsoft đã gặp nhau.'",
       "failure_type": "wrong_tool",
-      "expect": {"tool_calls": [{"name": "fetch", "args": {"url": "https://blog.google/technology/ai/google-gemini-ai/"}}]},
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "extract_entities",
+            "args": {
+              "text": "Hôm qua Sam Altman của OpenAI và Bill Gates từ Microsoft đã gặp nhau.",
+              "kinds": ["person", "organization"]
+            }
+          }
+        ]
+      },
       "metadata": {
-        "skill": "routing_url_over_search",
+        "skill": "use_extract_entities_tool",
         "difficulty": "medium",
-        "what_it_tests": "Câu vừa có URL cụ thể vừa có từ khóa chủ đề (Gemini) làm mồi nhử sang lookup; đã có link thì phải đọc đúng link đó bằng fetch và không tìm kiếm thêm."
+        "what_it_tests": "Agent phải gọi extract_entities với text và kinds tương ứng để bóc tách thông tin thay vì tự trả lời chay."
       }
     },
     {
-      "id": "G02_top_and_limit_together",
-      "phase": "B", "suite": "group",
-      "query": "Cho mình 10 bài đăng được chia sẻ nhiều nhất về Llama 4",
-      "failure_type": "wrong_arg_value",
-      "expect": {"tool_calls": [{"name": "social_search", "args": {"query": "Llama 4", "search_type": "Top", "limit": 10}}]},
+      "id": "G02_rank_sources_usage",
+      "phase": "B",
+      "suite": "group",
+      "query": "Mình có 2 bài báo: bài 1 (link: abc.com, title: Bài A) và bài 2 (link: def.com, title: Bài B). Lọc cho mình các nguồn thuộc Tier 1 nhé.",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "rank_sources",
+            "args": {
+              "items": [
+                { "title": "Bài A", "url": "abc.com" },
+                { "title": "Bài B", "url": "def.com" }
+              ],
+              "min_tier": 1
+            }
+          }
+        ]
+      },
       "metadata": {
-        "skill": "arg_search_type_and_limit",
+        "skill": "use_rank_sources_tool",
         "difficulty": "hard",
-        "what_it_tests": "Phải trích đồng thời hai argument từ một câu: 'được chia sẻ nhiều nhất' -> search_type=Top và '10 bài' -> limit=10, đồng thời giữ query gọn là 'Llama 4' chứ không nhét cả câu vào."
+        "what_it_tests": "Agent phải truyền đúng mảng items và min_tier=1 vào tool rank_sources."
       }
     },
     {
       "id": "G03_out_of_scope_translation",
-      "phase": "B", "suite": "group",
+      "phase": "B",
+      "suite": "group",
       "query": "Dịch giúp mình đoạn thơ này sang tiếng Anh: 'Trăng lên đầu núi, gió về đầu sông.'",
       "failure_type": "out_of_scope",
-      "expect": {"no_tool": true},
+      "expect": {
+        "no_tool": true
+      },
       "metadata": {
         "skill": "no_tool_out_of_scope",
         "difficulty": "medium",
@@ -42,10 +77,20 @@
     },
     {
       "id": "G04_confirm_before_send_text",
-      "phase": "B", "suite": "group",
+      "phase": "B",
+      "suite": "group",
       "query": "Gửi giúp mình tin nhắn này lên Telegram: 'Team ơi 3h chiều nay họp nhé'",
       "failure_type": "wrong_boundary",
-      "expect": {"tool_calls": [{"name": "clarify", "args": {"response_type": "yes_no"}}]},
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {
+              "response_type": "yes_no"
+            }
+          }
+        ]
+      },
       "metadata": {
         "skill": "boundary_confirm_before_action",
         "difficulty": "medium",
@@ -54,10 +99,18 @@
     },
     {
       "id": "G05_missing_account_pronoun",
-      "phase": "B", "suite": "group",
+      "phase": "B",
+      "suite": "group",
       "query": "Tìm giúp mình các bài đăng gần đây của họ về sản phẩm mới",
       "failure_type": "missing_info",
-      "expect": {"tool_calls": [{"name": "clarify", "args": {}}]},
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {}
+          }
+        ]
+      },
       "metadata": {
         "skill": "clarify_missing_account",
         "difficulty": "medium",
@@ -66,13 +119,29 @@
     },
     {
       "id": "G06_switch_account_to_topic",
-      "phase": "B", "suite": "group",
+      "phase": "B",
+      "suite": "group",
       "turns": [
-        {"role": "user", "content": "Cho mình xem các bài đăng gần đây của Andrej Karpathy"},
-        {"role": "user", "content": "Giờ mình muốn biết cộng đồng đang bàn gì về chủ đề nanoGPT"}
+        {
+          "role": "user",
+          "content": "Cho mình xem các bài đăng gần đây của Andrej Karpathy"
+        },
+        {
+          "role": "user",
+          "content": "Giờ mình muốn biết cộng đồng đang bàn gì về chủ đề nanoGPT"
+        }
       ],
       "failure_type": "wrong_tool",
-      "expect": {"tool_calls": [{"name": "social_search", "args": {"query": "nanoGPT"}}]},
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "social_search",
+            "args": {
+              "query": "nanoGPT"
+            }
+          }
+        ]
+      },
       "metadata": {
         "skill": "routing_switch_account_to_topic",
         "difficulty": "medium",
@@ -81,13 +150,31 @@
     },
     {
       "id": "G07_widen_timeframe_after_correction",
-      "phase": "B", "suite": "group",
+      "phase": "B",
+      "suite": "group",
       "turns": [
-        {"role": "user", "content": "Tin tức AI hôm nay có gì?"},
-        {"role": "user", "content": "Cho mình xem cả tháng này luôn"}
+        {
+          "role": "user",
+          "content": "Tin tức AI hôm nay có gì?"
+        },
+        {
+          "role": "user",
+          "content": "Cho mình xem cả tháng này luôn"
+        }
       ],
       "failure_type": "wrong_arg_value",
-      "expect": {"tool_calls": [{"name": "lookup", "args": {"query": "AI", "topic": "news", "timeframe": "month"}}]},
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "lookup",
+            "args": {
+              "query": "AI",
+              "topic": "news",
+              "timeframe": "month"
+            }
+          }
+        ]
+      },
       "metadata": {
         "skill": "arg_timeframe_widened",
         "difficulty": "hard",
@@ -95,30 +182,61 @@
       }
     },
     {
-      "id": "G08_cancelled_before_acting",
-      "phase": "B", "suite": "group",
+      "id": "G08_save_note_after_confirm",
+      "phase": "B",
+      "suite": "group",
       "turns": [
-        {"role": "user", "content": "Tìm giúp mình tin AI hôm nay"},
-        {"role": "user", "content": "Thôi khoan đã"},
-        {"role": "user", "content": "Trước khi tìm, nhắc lại giúp mình yêu cầu ban đầu của mình là gì"}
+        {
+          "role": "user",
+          "content": "Lưu nội dung '# Báo cáo' vào file bao_cao giúp mình."
+        },
+        {
+          "role": "user",
+          "content": "Ừ, mình đồng ý cho phép ghi file."
+        }
       ],
-      "failure_type": "unnecessary_tool",
-      "expect": {"no_tool": true},
+      "failure_type": "wrong_boundary",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "save_note",
+            "args": {
+              "markdown": "# Báo cáo",
+              "filename": "bao_cao",
+              "confirmed": true
+            }
+          }
+        ]
+      },
       "metadata": {
-        "skill": "no_tool_after_cancel",
-        "difficulty": "medium",
-        "what_it_tests": "User đã dừng yêu cầu tìm kiếm và lượt cuối chỉ hỏi lại nội dung hội thoại. Agent phải trả lời trực tiếp, không được chạy lại tool của lượt đầu."
+        "skill": "use_save_note_tool",
+        "difficulty": "hard",
+        "what_it_tests": "Sau khi user xác nhận, agent phải gọi save_note với tham số confirmed=true."
       }
     },
     {
       "id": "G09_missing_url_not_supplied_by_context",
-      "phase": "B", "suite": "group",
+      "phase": "B",
+      "suite": "group",
       "turns": [
-        {"role": "user", "content": "Mình cần tóm tắt một bài viết"},
-        {"role": "user", "content": "Bài đó hay lắm, bạn đọc thử đi"}
+        {
+          "role": "user",
+          "content": "Mình cần tóm tắt một bài viết"
+        },
+        {
+          "role": "user",
+          "content": "Bài đó hay lắm, bạn đọc thử đi"
+        }
       ],
       "failure_type": "missing_info",
-      "expect": {"tool_calls": [{"name": "clarify", "args": {}}]},
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {}
+          }
+        ]
+      },
       "metadata": {
         "skill": "clarify_missing_url_multiturn",
         "difficulty": "medium",
@@ -126,18 +244,37 @@
       }
     },
     {
-      "id": "G10_send_after_explicit_confirm",
-      "phase": "B", "suite": "group",
-      "turns": [
-        {"role": "user", "content": "Gửi tin nhắn 'Chốt deadline 5h chiều' lên Telegram giúp mình"},
-        {"role": "user", "content": "Ừ mình xác nhận, gửi luôn đi"}
-      ],
-      "failure_type": "wrong_boundary",
-      "expect": {"tool_calls": [{"name": "send", "args": {"confirmed": true}}]},
+      "id": "G10_dedupe_tool_usage",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": false,
       "metadata": {
-        "skill": "boundary_act_after_confirm",
-        "difficulty": "hard",
-        "what_it_tests": "Mặt còn lại của confirmation boundary: khi user đã xác nhận rõ ràng thì agent phải thực sự gọi send với confirmed=true, không hỏi lại vòng nữa. Telegram credentials để unset nên tool trả error mà không gửi gì; case này chỉ chấm routing và argument."
+        "skill": "use_dedupe_tool",
+        "difficulty": "medium",
+        "what_it_tests": "Kiểm tra xem AI có tự động gọi tool dedupe với key='title' khi người dùng yêu cầu lọc các bài báo bị trùng tên hay không."
+      },
+      "input": "Mình có danh sách bài báo này: 1 bài tên 'GPT-5 ra mắt' (link abc.com), và 1 bài khác cũng tên 'GPT-5 ra mắt' (link xyz.com). Bạn gộp các bài trùng tên lại giúp mình nhé.",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "dedupe",
+            "args": {
+              "items": [
+                {
+                  "title": "GPT-5 ra mắt",
+                  "url": "abc.com"
+                },
+                {
+                  "title": "GPT-5 ra mắt",
+                  "url": "xyz.com"
+                }
+              ],
+              "key": "title"
+            }
+          }
+        ]
       }
     }
   ]
