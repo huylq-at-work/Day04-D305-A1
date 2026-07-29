@@ -99,17 +99,82 @@ version,author,changed_artifact,artifact_version,prompt_hash,tools_hash,reason,h
 Nếu metric **giảm**, vẫn ghi lại. Một giả thuyết bị bác bỏ là bằng chứng tốt cho report,
 không phải thất bại.
 
-### T5 — Nhận tool mới từ R2
+### T5 — Viết lại tool declaration (đây là nội dung chính của v2)
 
-R2 sẽ đưa cho bạn khối YAML declaration đã soạn sẵn trong `TOOL.md` của tool đó. Bạn dán
-vào `tools.yaml`. Trước khi dán, kiểm tra:
+Bạn **không viết code tool** — đó là việc của R2. Nhưng bạn sở hữu `tools.yaml`, tức là bạn
+định nghĩa **thứ model thực sự nhìn thấy**: tên tool, mô tả, và schema arguments. Tên và mô
+tả tool là một phần của interface với model, ngang hàng với system prompt.
+
+10 declaration hiện có được viết mơ hồ **có chủ đích**. Đây là danh sách chỗ thiếu, kèm case
+bị ảnh hưởng:
+
+| Tool | Mô tả hiện tại | Thiếu gì | Case ảnh hưởng |
+| :-- | :-- | :-- | :-- |
+| `timeline` | "Lấy các bài đăng gần đây." | Không nói đây là bài **của một tài khoản cụ thể**; không nói phải map tên người → handle | `R01`, `M03` |
+| `social_search` | "Tìm trên mạng xã hội." | Không phân biệt với `timeline`; không nói `Latest` vs `Top` dùng khi nào | `R02`, `R07` |
+| `lookup` | "Tra cứu thông tin trên internet." | Không nói `topic=news` khi nào, `timeframe` map từ "hôm nay/tuần này/tháng này" ra sao | `R03`, `R06` |
+| `fetch` | "Lấy nội dung từ một địa chỉ." | Không nói khi đã có URL thì dùng cái này chứ không phải `lookup` | `R04`, `R11` |
+| `format` | "Trình bày dữ liệu đã có thành văn bản." | Không nói chỉ dùng khi **đã có** items, không tự đi tìm dữ liệu | `unnecessary_tool` |
+| `clarify` | "Gửi một câu hỏi cho người dùng." | Không nói khi nào **phải** hỏi lại; không nói `yes_no` dùng cho xác nhận hành động | `R10`, `R11`, `R12`, `M01`, `M04` |
+| `send` | "Gửi một đoạn văn bản đi." | **Không nêu confirmation boundary** — cờ `confirmed` chỉ ghi "Cờ xác nhận" | `R12` |
+
+Công thức cho một description tốt, ba phần:
+
+1. **DÙNG khi nào** — mô tả tình huống, không mô tả cơ chế
+2. **KHÔNG dùng khi nào** — nêu thẳng tool dễ bị nhầm với nó
+3. **Convention cho arguments** — giá trị mặc định quan trọng, cách map ngôn ngữ tự nhiên sang enum
+
+Ví dụ cặp `timeline` / `social_search` — hai tool này bị nhầm nhiều nhất vì cùng nói về
+"bài đăng":
+
+```yaml
+  - name: timeline
+    description: >
+      Lấy các bài đăng gần đây CỦA MỘT TÀI KHOẢN cụ thể. DÙNG khi user hỏi về nội dung của
+      một người/tổ chức xác định ("Sam Altman đăng gì", "tweet mới của OpenAI").
+      KHÔNG dùng khi user hỏi về một CHỦ ĐỀ mà không chỉ rõ tài khoản — trường hợp đó dùng
+      social_search. Nếu user nói tên người, hãy chuyển thành handle (Sam Altman -> sama,
+      Elon Musk -> elonmusk). Nếu không xác định được tài khoản, gọi clarify thay vì đoán.
+```
+
+Tool có side effect phải nêu boundary ngay trong description, không giấu trong tên field:
+
+```yaml
+  - name: send
+    description: >
+      Gửi một đoạn văn bản ra kênh bên ngoài. Đây là hành động KHÔNG hoàn tác được.
+      BẮT BUỘC hỏi user xác nhận bằng clarify(response_type="yes_no") trước, và chỉ gọi
+      tool này với confirmed=true sau khi user đã đồng ý rõ ràng.
+```
+
+**Cẩn thận với tool optional.** `send`, `policy`, `papers`, `paper_text` không nằm trong
+must-have, nhưng chỉ cần declaration còn trong `tools.yaml` là model vẫn nhìn thấy và routing
+vẫn có thể bị ảnh hưởng. Bỏ chúng ra để cô lập core cũng là **một giả thuyết hợp lệ** cho một
+version — nhưng nhớ bật lại trước khi chạy suite `extension`.
+
+### T6 — Nhận tool mới từ R2
+
+R2 sẽ đưa cho bạn khối YAML declaration đã soạn sẵn trong `TOOL.md` của tool đó. Bạn dán vào
+`tools.yaml`. Bốn tool R2 dự kiến giao, theo thứ tự:
+
+| Tool | Làm gì | Điểm cần kiểm khi dán |
+| :-- | :-- | :-- |
+| `dedupe` | Gộp item trùng theo url/title | Phải ghi rõ chỉ xử lý dữ liệu **đã có**, không đi tìm mới |
+| `save_note` | Ghi digest ra file local | Có `confirmed`; description phải nêu boundary như `send` |
+| `rank_sources` | Chấm độ tin cậy theo source tier | Nêu rõ tier 1/2/3 lấy từ company policy |
+| `extract_entities` | Bóc tên người/tổ chức từ text | Nêu rõ input là text đã `fetch`, không phải URL |
+
+Trước khi dán, kiểm tra:
 
 - `name` trong YAML khớp **chính xác** key trong `TOOL_FUNCTIONS` ở `tools/__init__.py`
 - `parameters` là JSON Schema hợp lệ, có `type: object` và `required`
-- description nói rõ **khi nào dùng và khi nào không dùng**
+- description đủ ba phần: DÙNG khi nào / KHÔNG dùng khi nào / convention arguments
 
 **Vòng nào thêm tool thì không sửa prompt.** Ghi `changed_artifact` là
 `tools.yaml (add tool X)`.
+
+Thêm tool có thể làm **tăng** lỗi `unnecessary_tool` — model có thêm lựa chọn để phân tâm.
+Nếu metric giảm sau khi thêm tool, đó vẫn là kết quả đáng ghi, và là một đoạn hay cho report.
 
 ## Tiêu chí hoàn thành
 
@@ -118,6 +183,8 @@ vào `tools.yaml`. Trước khi dán, kiểm tra:
 - [ ] Mọi `prompt_hash`/`tools_hash` khớp với run JSON tương ứng
 - [ ] Có ít nhất một version cải thiện `tool_routing_accuracy` hoặc `argument_accuracy` đo được
 - [ ] `runs/` có đủ file JSON cho cả 4 version
+- [ ] Mọi tool trong `tools.yaml` có description đủ ba phần (DÙNG / KHÔNG dùng / convention)
+- [ ] Tool có side effect nêu confirmation boundary ngay trong description
 
 ## Bàn giao
 

@@ -78,17 +78,51 @@ Tool mới phải khác thật sự với 10 tool có sẵn (`clarify`, `timelin
 `lookup`, `fetch`, `format`, `send`, `policy`, `papers`, `paper_text`). Ưu tiên tool
 **không cần API key mới** để không bị chặn bởi quota giữa buổi.
 
-Gợi ý an toàn, chạy offline được:
+**Khoảng trống thật trong pipeline hiện tại.** 10 tool có sẵn tạo thành chuỗi: thu thập
+(`timeline`, `social_search`, `lookup`, `papers`) → đọc sâu (`fetch`, `paper_text`) → trình
+bày (`format`) → gửi (`send`). Chỗ trống nằm **giữa thu thập và trình bày**: `format` nhận
+thẳng `items` rồi render, không có bước nào lọc, gộp hay xếp hạng. Khi agent gọi song song
+`lookup` + `social_search` (đúng như `R13_parallel_web_and_tweets` yêu cầu), nó nhận về hai
+danh sách trùng nhau và không có tool nào xử lý.
 
-| Tool | kind | Ý tưởng |
-| :-- | :-- | :-- |
-| `dedupe` | local_formatter | Gộp item trùng theo URL/title trước khi `format` |
-| `compare` | local_formatter | So sánh 2 nhóm item thành bảng markdown |
-| `save_note` | local_file_write | Ghi digest ra `notes/*.md`, cần `confirmed` |
-| `extract_entities` | local_formatter | Bóc tên người/tổ chức/sản phẩm từ text đã fetch |
-| `rank_sources` | local_knowledge | Chấm độ tin cậy nguồn theo danh sách domain nội bộ |
+Bốn tool dưới đây lấp đúng khoảng trống đó. Tất cả chạy local, **không cần API key mới,
+không tốn quota** — nên không bị chặn giữa buổi.
 
-Tool `local_formatter` có lợi thế: chạy tức thì, không tốn quota, dễ demo trace trên UI.
+Làm theo đúng thứ tự này, xong cái nào giao R1 ngay cái đó:
+
+| # | Tool | kind | side_effect | Làm gì |
+| :-: | :-- | :-- | :-- | :-- |
+| 1 | `dedupe` | local_formatter | false | Gộp item trùng theo `url` (chuẩn hoá bỏ `?utm_...`) hoặc `title` |
+| 2 | `save_note` | action | local_file_write | Ghi digest ra `notes/*.md`; cần `confirmed=true` |
+| 3 | `rank_sources` | local_knowledge | false | Chấm item theo source tier 1/2/3 |
+| 4 | `extract_entities` | local_formatter | false | Bóc tên người/tổ chức/handle từ text đã `fetch` |
+
+Chữ ký đề xuất:
+
+```python
+def dedupe_items(items: list[dict] | None = None, key: str = "url") -> dict
+def save_note(markdown: str = "", filename: str = "", confirmed: bool = False) -> dict
+def rank_sources(items: list[dict] | None = None, min_tier: int = 3) -> dict
+def extract_entities(text: str = "", kinds: list[str] | None = None) -> dict
+```
+
+Mọi tool nhận `items` phải dùng đúng shape mà `format` đang dùng:
+`{title, url, source, summary, section}` — xem [`tools/format/tool.py`](../../starter_v0/tools/format/tool.py).
+
+**`rank_sources` là tool có chiều sâu nhất.** Đừng tự bịa thang điểm: source tier đã được
+định nghĩa sẵn trong
+[`company_policy/source-citation-policy.md`](../../starter_v0/company_policy/source-citation-policy.md) —
+Tier 1 là primary source / blog chính thức / paper, Tier 2 là báo chí uy tín có dẫn nguồn
+gốc, Tier 3 là social post và claim chưa kiểm chứng. Implement đúng theo file đó thì khi bị
+challenge ở showdown, nhóm chỉ cần mở policy ra là trả lời được.
+
+**`save_note` không thừa dù đã có `send`.** Hiện chỉ `send` mang confirmation boundary, nên
+mọi eval `wrong_boundary` đều xoay quanh Telegram. Có tool thứ hai cùng pattern cho phép R3
+viết case kiểm tra agent **hiểu nguyên tắc** hay chỉ học thuộc "gặp send thì hỏi".
+
+Tận dụng `fold_text` và `terms` có sẵn trong
+[`tools/_shared.py`](../../starter_v0/tools/_shared.py) cho `extract_entities`, và `domain`
+cho `rank_sources` — đừng viết lại.
 
 ### T2 — Viết tool
 
