@@ -1,0 +1,156 @@
+# starter_v0 — tool declarations (v2 optimized version).
+# This version provides clear usage guidelines, differentiation between similar tools,
+# and explicit argument conventions to improve routing and argument accuracy.
+#
+# If you rename a tool, keep the name in sync across:
+#   this file  ->  tools/__init__.py (TOOL_FUNCTIONS)  ->  data/eval_base.json + data/eval_research_extension.json
+tools:
+  # ---------------- Core tools ----------------
+  - name: clarify
+    description: >
+      Gửi câu hỏi cho người dùng để làm rõ thông tin thiếu hoặc xác nhận hành động.
+      DÙNG khi: (1) Thiếu thông tin bắt buộc như tên tài khoản, URL, hoặc tham số không rõ ràng. 
+      (2) Cần XÁC NHẬN trước khi thực hiện hành động không hoàn tác (gửi tin, đăng bài) — dùng response_type="yes_no".
+      KHÔNG dùng khi: Đã có đủ thông tin để thực hiện request.
+      Convention: Dùng response_type="yes_no" cho confirmation, "text" cho hỏi thông tin tự do, "choice" khi có nhiều lựa chọn cụ thể.
+    parameters:
+      type: object
+      properties:
+        question: {type: string, default: "", description: "Câu hỏi"}
+        response_type: {type: string, enum: [text, yes_no, choice], default: "text", description: "Kiểu trả lời"}
+        options: {type: array, default: [], items: {type: string}, description: "Các lựa chọn"}
+      required: [question]
+
+  - name: timeline
+    description: >
+      Lấy các bài đăng gần đây CỦA MỘT TÀI KHOẢN cụ thể trên mạng xã hội.
+      DÙNG khi: User hỏi về nội dung của một người/tổ chức xác định (ví dụ: "tweet của Sam Altman", "bài đăng mới nhất của OpenAI").
+      KHÔNG dùng khi: User hỏi về một CHỦ ĐỀ mà không chỉ rõ tài khoản — trường hợp đó dùng social_search.
+      Convention: Chuyển tên người thành handle (Sam Altman → sama, Elon Musk → elonmusk, Andrej Karpathy → karpathy, OpenAI → openai). 
+      Nếu không biết handle của người được nhắc, gọi clarify để hỏi thay vì đoán.
+    parameters:
+      type: object
+      properties:
+        screenname: {type: string, default: "", description: "Handle tài khoản (không có @)"}
+        limit: {type: integer, default: 5, description: "Số lượng bài đăng"}
+      required: [screenname]
+
+  - name: social_search
+    description: >
+      Tìm kiếm các bài đăng trên mạng xã hội theo CHỦ ĐỀ hoặc từ khóa.
+      DÙNG khi: User hỏi về một chủ đề/sự kiện mà không chỉ định tài khoản cụ thể (ví dụ: "người ta nói gì về GPT-5", "tweet về AI").
+      KHÔNG dùng khi: User hỏi về bài đăng CỦA một người/tổ chức cụ thể — trường hợp đó dùng timeline.
+      Convention: search_type="Latest" cho bài mới nhất (mặc định), search_type="Top" cho bài phổ biến/viral/hot nhất.
+    parameters:
+      type: object
+      properties:
+        query: {type: string, default: "", description: "Từ khóa tìm kiếm"}
+        search_type: {type: string, enum: [Latest, Top], default: "Latest", description: "Cách sắp xếp"}
+        limit: {type: integer, default: 5, description: "Số lượng"}
+      required: [query]
+
+  - name: lookup
+    description: >
+      Tra cứu thông tin trên internet qua công cụ tìm kiếm web.
+      DÙNG khi: User hỏi về tin tức web, thông tin chung, hoặc nghiên cứu không phải trên mạng xã hội.
+      KHÔNG dùng khi: (1) Đã có URL cụ thể — dùng fetch. (2) Tìm trên mạng xã hội — dùng social_search hoặc timeline.
+      Convention: topic="news" cho tin tức/tin thời sự, topic="general" cho thông tin chung. 
+      timeframe: "day" = hôm nay, "week" = tuần này, "month" = tháng này, "year" = năm nay (mặc định: week).
+    parameters:
+      type: object
+      properties:
+        query: {type: string, default: "", description: "Truy vấn tìm kiếm"}
+        topic: {type: string, enum: [general, news], default: "general", description: "Phân loại"}
+        timeframe: {type: string, enum: [day, week, month, year], default: "week", description: "Khoảng thời gian"}
+        max_results: {type: integer, default: 5, description: "Số kết quả"}
+      required: [query]
+
+  - name: fetch
+    description: >
+      Lấy nội dung đầy đủ từ một URL cụ thể.
+      DÙNG khi: User cung cấp một địa chỉ web cụ thể và muốn đọc/tóm tắt nội dung (ví dụ: "đọc bài này: https://...", "tóm tắt link này").
+      KHÔNG dùng khi: Chưa có URL — dùng lookup hoặc social_search để tìm trước.
+      Convention: url phải là địa chỉ đầy đủ bắt đầu bằng http:// hoặc https://.
+    parameters:
+      type: object
+      properties:
+        url: {type: string, default: "", description: "Địa chỉ web đầy đủ"}
+      required: [url]
+
+  - name: format
+    description: >
+      Trình bày dữ liệu đã thu thập thành văn bản có cấu trúc.
+      DÙNG khi: Đã có dữ liệu từ các tool khác (timeline, social_search, lookup, fetch) và cần format thành output cuối cùng.
+      KHÔNG dùng khi: Chưa có dữ liệu — tool này CHỈ format items có sẵn, không tự đi tìm thông tin mới.
+      Convention: template="sections" cho báo cáo có phần, "brief" cho tóm tắt ngắn, "bullets" cho danh sách, "thread" cho chuỗi tweet.
+    parameters:
+      type: object
+      properties:
+        items:
+          type: array
+          default: []
+          description: "Danh sách item đã có"
+          items:
+            type: object
+            properties:
+              title: {type: string}
+              url: {type: string}
+              source: {type: string}
+              summary: {type: string}
+              section: {type: string}
+        template: {type: string, enum: [brief, sections, bullets, thread, daily_ai_vn], default: "sections", description: "Khuôn mẫu"}
+        headline: {type: string, default: "", description: "Tiêu đề"}
+      required: [items, template]
+
+  # ---------------- Bonus tools ----------------
+  - name: send
+    description: >
+      Gửi một đoạn văn bản ra kênh bên ngoài (Telegram, chat, etc.). Đây là hành động KHÔNG HOÀN TÁC được.
+      DÙNG khi: User yêu cầu gửi/đăng/publish tin nhắn hoặc nội dung.
+      KHÔNG dùng khi: User chỉ hỏi thông tin hoặc yêu cầu nghiên cứu mà không đề cập đến việc gửi đi.
+      QUAN TRỌNG: BẮT BUỘC gọi clarify với response_type="yes_no" để xác nhận TRƯỚC, và chỉ gọi send với confirmed=true SAU KHI user đã đồng ý rõ ràng.
+    parameters:
+      type: object
+      properties:
+        text: {type: string, default: "", description: "Nội dung"}
+        confirmed: {type: boolean, default: false, description: "Cờ xác nhận (chỉ true sau khi user đồng ý)"}
+      required: [text]
+
+  - name: policy
+    description: >
+      Tìm kiếm trong tài liệu chính sách nội bộ của công ty.
+      DÙNG khi: User hỏi về quy định, policy, guideline nội bộ.
+      KHÔNG dùng khi: Tìm thông tin công khai trên internet — dùng lookup.
+    parameters:
+      type: object
+      properties:
+        query: {type: string, default: "", description: "Truy vấn"}
+        policy_area: {type: string, enum: [all, ai_research, source_citation, data_privacy, external_publishing, tool_usage], default: "all", description: "Nhóm policy"}
+        top_k: {type: integer, default: 3, description: "Số mục"}
+      required: [query]
+
+  - name: papers
+    description: >
+      Tìm bài báo khoa học trên arXiv.
+      DÙNG khi: User yêu cầu tìm paper/bài báo khoa học/nghiên cứu học thuật.
+      KHÔNG dùng khi: Tìm tin tức hoặc bài viết blog — dùng lookup.
+    parameters:
+      type: object
+      properties:
+        query: {type: string, default: "", description: "Từ khóa"}
+        max_results: {type: integer, default: 5, description: "Số lượng"}
+        sort_by: {type: string, enum: [relevance, lastUpdatedDate, submittedDate], default: "relevance", description: "Sắp xếp"}
+      required: [query]
+
+  - name: paper_text
+    description: >
+      Lấy nội dung text của một bài báo khoa học từ arXiv.
+      DÙNG khi: User muốn đọc/tóm tắt nội dung chi tiết của một paper cụ thể (đã có arXiv ID hoặc URL).
+      KHÔNG dùng khi: Chưa tìm được paper — dùng papers để tìm trước.
+    parameters:
+      type: object
+      properties:
+        arxiv_url: {type: string, default: "", description: "arXiv ID hoặc URL"}
+        max_pages: {type: integer, default: 5, description: "Số trang"}
+        max_chars: {type: integer, default: 8000, description: "Số ký tự"}
+      required: [arxiv_url]
