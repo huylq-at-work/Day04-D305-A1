@@ -154,3 +154,114 @@ tools:
         max_pages: {type: integer, default: 5, description: "Số trang"}
         max_chars: {type: integer, default: 8000, description: "Số ký tự"}
       required: [arxiv_url]
+
+  # ---------------- Tools mới từ Role 2 ----------------
+  - name: save_note
+    description: >
+      Lưu một digest Markdown vào thư mục notes/ trên máy. DÙNG khi user yêu cầu lưu hoặc
+      ghi nội dung thành note Markdown. KHÔNG dùng để format nội dung, gửi Telegram hay
+      trả lời câu hỏi chỉ cần đọc. Đây là action có side effect: luôn gọi lần đầu với
+      confirmed=false; chỉ gọi lại confirmed=true sau khi user xác nhận rõ ràng. filename
+      là tên file đơn, không chứa path; tool tự thêm .md và không ghi đè file đã tồn tại.
+    parameters:
+      type: object
+      properties:
+        markdown:
+          type: string
+          default: ""
+          description: "Nội dung Markdown không rỗng cần lưu."
+        filename:
+          type: string
+          default: ""
+          description: "Tên file đơn; có thể bỏ đuôi .md, không được chứa đường dẫn."
+        confirmed:
+          type: boolean
+          default: false
+          description: "Chỉ true sau khi user đã xác nhận rõ ràng việc ghi file."
+      required: [markdown, filename]
+
+  - name: rank_sources
+    description: >
+      Xếp các item đã thu thập theo policy Tier 1/2/3, mạnh nhất trước, và có thể lọc
+      nguồn yếu. DÙNG sau lookup/social/papers và trước format hoặc save_note. KHÔNG dùng
+      để tìm kiếm, fetch URL hay xác minh claim. Truyền items theo shape {title, url,
+      source, summary, section}; chỉ truyền links_primary_evidence=true khi dữ liệu đầu
+      vào thực sự chứng minh báo chí có dẫn nguồn gốc. min_tier=1 chỉ giữ Tier 1,
+      min_tier=2 giữ Tier 1-2, mặc định 3 giữ tất cả.
+    parameters:
+      type: object
+      properties:
+        items:
+          type: array
+          default: []
+          description: "Danh sách item đã thu thập; không tự bịa metadata về nguồn."
+          items:
+            type: object
+            properties:
+              title: {type: string}
+              url: {type: string}
+              source: {type: string}
+              summary: {type: string}
+              section: {type: string}
+              source_type: {type: string}
+              links_primary_evidence: {type: boolean}
+        min_tier:
+          type: integer
+          enum: [1, 2, 3]
+          default: 3
+          description: "Tier yếu nhất được giữ: 1 chỉ Tier 1; 2 giữ Tier 1-2; 3 giữ tất cả."
+      required: [items]
+
+  - name: extract_entities
+    description: >
+      Bóc tên người, tổ chức và @handle từ text đã đọc bằng heuristic local. DÙNG sau
+      fetch hoặc paper_text khi cần lập danh sách entity trước khi format/rank. KHÔNG
+      dùng để fetch URL, tìm kiếm, xác minh danh tính hoặc coi candidate là fact đã kiểm
+      chứng. Truyền toàn bộ nội dung qua text; kinds mặc định gồm person, organization
+      và handle, hoặc chọn một tập con trong ba giá trị này.
+    parameters:
+      type: object
+      properties:
+        text:
+          type: string
+          default: ""
+          description: "Nội dung plain text hoặc Markdown đã lấy về; không truyền URL thay cho nội dung."
+        kinds:
+          type: array
+          default: [person, organization, handle]
+          description: "Các loại entity cần trả về."
+          items:
+            type: string
+            enum: [person, organization, handle]
+          minItems: 1
+          uniqueItems: true
+      required: [text]
+
+  - name: dedupe
+    description: >
+      Gộp các item trùng trong một danh sách đã thu thập và giữ item xuất hiện đầu tiên.
+      DÙNG sau khi có kết quả từ một hoặc nhiều nguồn, trước khi format hoặc lưu digest.
+      KHÔNG dùng để tìm kiếm, tải nội dung hay loại item chỉ vì thiếu URL/title. Truyền
+      items theo shape {title, url, source, summary, section}; key là url (mặc định, bỏ
+      fragment và utm_*) hoặc title.
+    parameters:
+      type: object
+      properties:
+        items:
+          type: array
+          default: []
+          description: "Danh sách item đã thu thập; item đầu tiên trong mỗi nhóm trùng được giữ lại."
+          items:
+            type: object
+            properties:
+              title: {type: string}
+              url: {type: string}
+              source: {type: string}
+              summary: {type: string}
+              section: {type: string}
+        key:
+          type: string
+          enum: [url, title]
+          default: url
+          description: "Trường dùng để phát hiện item trùng."
+      required: [items]
