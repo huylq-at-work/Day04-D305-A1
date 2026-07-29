@@ -9,12 +9,15 @@ import yaml
 # The imported function names are the underlying implementations (unchanged).
 from .clarify.tool import ask_user
 from .dedupe.tool import dedupe_items
+from .extract_entities.tool import extract_entities
 from .papers.tool import arxiv_search
 from .paper_text.tool import get_arxiv_paper_text
 from .timeline.tool import get_user_tweets
 from .fetch.tool import read_url
 from .format.tool import render_digest
 from .policy.tool import search_company_policy
+from .rank_sources.tool import rank_sources
+from .save_note.tool import save_note
 from .social_search.tool import search_tweets
 from .send.tool import send_telegram
 from .lookup.tool import web_search
@@ -28,6 +31,7 @@ from .lookup.tool import web_search
 TOOL_FUNCTIONS = {
     "clarify": ask_user,
     "dedupe": dedupe_items,
+    "extract_entities": extract_entities,
     "timeline": get_user_tweets,
     "social_search": search_tweets,
     "lookup": web_search,
@@ -35,6 +39,8 @@ TOOL_FUNCTIONS = {
     "format": render_digest,
     "send": send_telegram,
     "policy": search_company_policy,
+    "rank_sources": rank_sources,
+    "save_note": save_note,
     "papers": arxiv_search,
     "paper_text": get_arxiv_paper_text,
 }
