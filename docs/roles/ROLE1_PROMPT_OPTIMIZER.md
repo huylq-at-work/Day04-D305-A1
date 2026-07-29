@@ -99,6 +99,16 @@ version,author,changed_artifact,artifact_version,prompt_hash,tools_hash,reason,h
 Nếu metric **giảm**, vẫn ghi lại. Một giả thuyết bị bác bỏ là bằng chứng tốt cho report,
 không phải thất bại.
 
+**Snapshot artifact sau mỗi version.** Copy hai file vừa chạy vào `artifacts/versions/<label>/`:
+
+```bash
+mkdir artifacts\versions\v0 && copy artifacts\system_prompt.md artifacts\versions\v0\ && copy artifacts\tools.yaml artifacts\versions\v0\
+```
+
+UI của R4 tự quét thư mục này và cho phép chạy **cùng một câu hỏi trên hai version cạnh nhau**.
+Không có snapshot thì chế độ so sánh không dùng được, mà đó lại là một trong bốn tiêu chí
+chấm UI ("cùng một scenario chạy qua nhiều version để thấy cải thiện").
+
 ### T5 — Viết lại tool declaration (đây là nội dung chính của v2)
 
 Bạn **không viết code tool** — đó là việc của R2. Nhưng bạn sở hữu `tools.yaml`, tức là bạn

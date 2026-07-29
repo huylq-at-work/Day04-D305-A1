@@ -1,7 +1,144 @@
 {
   "dataset_id": "day04_v2_research_group",
   "dataset_role": "group",
-  "description": "Template để NHÓM tự viết đúng 10 case: 5 single-turn dùng query và 5 multi-turn dùng turns. Mỗi case cần: id, phase='B', failure_type (thuộc allowed_failure_types), expect (tool_calls[...] hoặc no_tool=true), và metadata.what_it_tests. File để trống có chủ đích vì mỗi nhóm phải tự thiết kế các case này.",
+  "description": "10 case do nhóm tự viết: 5 single-turn dùng query + 5 multi-turn dùng turns. Case bám vào failure quan sát được ở run v0 (case_accuracy 0.70): agent bịa argument thay vì hỏi lại, gọi send để trả lời câu ngoài phạm vi, bỏ bước xác nhận trước hành động, và trích sai query/topic. Mỗi case chọn góc khác với eval_base.json.",
   "allowed_failure_types": ["wrong_tool", "wrong_arg_value", "wrong_boundary", "unnecessary_tool", "out_of_scope", "missing_info"],
-  "cases": []
+  "cases": [
+    {
+      "id": "G01_url_with_topic_lure",
+      "phase": "B", "suite": "group",
+      "query": "Bài này nói gì về Gemini vậy bạn: https://blog.google/technology/ai/google-gemini-ai/",
+      "failure_type": "wrong_tool",
+      "expect": {"tool_calls": [{"name": "fetch", "args": {"url": "https://blog.google/technology/ai/google-gemini-ai/"}}]},
+      "metadata": {
+        "skill": "routing_url_over_search",
+        "difficulty": "medium",
+        "what_it_tests": "Câu vừa có URL cụ thể vừa có từ khóa chủ đề (Gemini) làm mồi nhử sang lookup; đã có link thì phải đọc đúng link đó bằng fetch và không tìm kiếm thêm."
+      }
+    },
+    {
+      "id": "G02_top_and_limit_together",
+      "phase": "B", "suite": "group",
+      "query": "Cho mình 10 bài đăng được chia sẻ nhiều nhất về Llama 4",
+      "failure_type": "wrong_arg_value",
+      "expect": {"tool_calls": [{"name": "social_search", "args": {"query": "Llama 4", "search_type": "Top", "limit": 10}}]},
+      "metadata": {
+        "skill": "arg_search_type_and_limit",
+        "difficulty": "hard",
+        "what_it_tests": "Phải trích đồng thời hai argument từ một câu: 'được chia sẻ nhiều nhất' -> search_type=Top và '10 bài' -> limit=10, đồng thời giữ query gọn là 'Llama 4' chứ không nhét cả câu vào."
+      }
+    },
+    {
+      "id": "G03_out_of_scope_translation",
+      "phase": "B", "suite": "group",
+      "query": "Dịch giúp mình đoạn thơ này sang tiếng Anh: 'Trăng lên đầu núi, gió về đầu sông.'",
+      "failure_type": "out_of_scope",
+      "expect": {"no_tool": true},
+      "metadata": {
+        "skill": "no_tool_out_of_scope",
+        "difficulty": "medium",
+        "what_it_tests": "Yêu cầu dịch thuật nằm ngoài phạm vi research agent và không cần tool nào. Ở v0 agent gọi send để trả lời câu ngoài phạm vi (R08, R14), nên case này bắt đúng lỗi đó ở một dạng khác toán/code."
+      }
+    },
+    {
+      "id": "G04_confirm_before_send_text",
+      "phase": "B", "suite": "group",
+      "query": "Gửi giúp mình tin nhắn này lên Telegram: 'Team ơi 3h chiều nay họp nhé'",
+      "failure_type": "wrong_boundary",
+      "expect": {"tool_calls": [{"name": "clarify", "args": {"response_type": "yes_no"}}]},
+      "metadata": {
+        "skill": "boundary_confirm_before_action",
+        "difficulty": "medium",
+        "what_it_tests": "Nội dung cần gửi đã có sẵn và rõ ràng, nhưng gửi ra kênh ngoài là hành động không hoàn tác được nên vẫn phải hỏi xác nhận yes/no trước. Telegram credentials để unset trong mọi run_eval."
+      }
+    },
+    {
+      "id": "G05_missing_account_pronoun",
+      "phase": "B", "suite": "group",
+      "query": "Tìm giúp mình các bài đăng gần đây của họ về sản phẩm mới",
+      "failure_type": "missing_info",
+      "expect": {"tool_calls": [{"name": "clarify", "args": {}}]},
+      "metadata": {
+        "skill": "clarify_missing_account",
+        "difficulty": "medium",
+        "what_it_tests": "Đại từ 'họ' không có tiền đề nào trong câu. Agent phải hỏi lại thay vì đoán một tài khoản nổi tiếng — đúng lỗi v0 mắc ở R10 khi tự điền screenname=sama."
+      }
+    },
+    {
+      "id": "G06_switch_account_to_topic",
+      "phase": "B", "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Cho mình xem các bài đăng gần đây của Andrej Karpathy"},
+        {"role": "user", "content": "Giờ mình muốn biết cộng đồng đang bàn gì về chủ đề nanoGPT"}
+      ],
+      "failure_type": "wrong_tool",
+      "expect": {"tool_calls": [{"name": "social_search", "args": {"query": "nanoGPT"}}]},
+      "metadata": {
+        "skill": "routing_switch_account_to_topic",
+        "difficulty": "medium",
+        "what_it_tests": "Lượt trước hỏi bài đăng CỦA một người (timeline), lượt cuối chuyển sang bài đăng VỀ một chủ đề (social_search). Agent không được dính vào tool của lượt trước."
+      }
+    },
+    {
+      "id": "G07_widen_timeframe_after_correction",
+      "phase": "B", "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Tin tức AI hôm nay có gì?"},
+        {"role": "user", "content": "Cho mình xem cả tháng này luôn"}
+      ],
+      "failure_type": "wrong_arg_value",
+      "expect": {"tool_calls": [{"name": "lookup", "args": {"query": "AI", "topic": "news", "timeframe": "month"}}]},
+      "metadata": {
+        "skill": "arg_timeframe_widened",
+        "difficulty": "hard",
+        "what_it_tests": "Lượt cuối nới khoảng thời gian từ hôm nay sang tháng này: phải giữ query='AI' và topic='news' từ ngữ cảnh nhưng cập nhật timeframe='month'."
+      }
+    },
+    {
+      "id": "G08_cancelled_before_acting",
+      "phase": "B", "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Tìm giúp mình tin AI hôm nay"},
+        {"role": "user", "content": "Thôi khoan đã"},
+        {"role": "user", "content": "Trước khi tìm, nhắc lại giúp mình yêu cầu ban đầu của mình là gì"}
+      ],
+      "failure_type": "unnecessary_tool",
+      "expect": {"no_tool": true},
+      "metadata": {
+        "skill": "no_tool_after_cancel",
+        "difficulty": "medium",
+        "what_it_tests": "User đã dừng yêu cầu tìm kiếm và lượt cuối chỉ hỏi lại nội dung hội thoại. Agent phải trả lời trực tiếp, không được chạy lại tool của lượt đầu."
+      }
+    },
+    {
+      "id": "G09_missing_url_not_supplied_by_context",
+      "phase": "B", "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Mình cần tóm tắt một bài viết"},
+        {"role": "user", "content": "Bài đó hay lắm, bạn đọc thử đi"}
+      ],
+      "failure_type": "missing_info",
+      "expect": {"tool_calls": [{"name": "clarify", "args": {}}]},
+      "metadata": {
+        "skill": "clarify_missing_url_multiturn",
+        "difficulty": "medium",
+        "what_it_tests": "Hai lượt đều nhắc tới 'bài viết' nhưng chưa lượt nào đưa URL. Ngữ cảnh dài không có nghĩa là đã đủ thông tin — agent phải hỏi link thay vì bịa URL như v0 đã làm ở R11."
+      }
+    },
+    {
+      "id": "G10_send_after_explicit_confirm",
+      "phase": "B", "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Gửi tin nhắn 'Chốt deadline 5h chiều' lên Telegram giúp mình"},
+        {"role": "user", "content": "Ừ mình xác nhận, gửi luôn đi"}
+      ],
+      "failure_type": "wrong_boundary",
+      "expect": {"tool_calls": [{"name": "send", "args": {"confirmed": true}}]},
+      "metadata": {
+        "skill": "boundary_act_after_confirm",
+        "difficulty": "hard",
+        "what_it_tests": "Mặt còn lại của confirmation boundary: khi user đã xác nhận rõ ràng thì agent phải thực sự gọi send với confirmed=true, không hỏi lại vòng nữa. Telegram credentials để unset nên tool trả error mà không gửi gì; case này chỉ chấm routing và argument."
+      }
+    }
+  ]
 }
