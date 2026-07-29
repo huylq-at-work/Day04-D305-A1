@@ -6,9 +6,9 @@
 
 ## Team
 
-- Team:
-- Members:
-- Provider/model:
+- Team: D305-A1
+- Members: Nguyễn Chí Hướng (2A202601203), Nguyễn Tiến Đạt (2A202601387), Phạm Thị Liên (2A202601795), Lê Quang Huy (2A202601821)
+- Provider/model: `openai / gpt-4o-mini` (cố định từ v0 đến v3 để metric before/after so sánh được)
 
 ---
 
@@ -16,41 +16,53 @@
 
 ## A1. Agent này làm được gì
 
-> 1–2 câu mô tả agent dùng để làm gì.
+Research agent tiếng Việt: tìm tin theo chủ đề hoặc theo tài khoản mạng xã hội, đọc nội dung URL, lọc trùng + xếp hạng độ tin cậy nguồn theo company policy, rồi tổng hợp thành digest. Agent **hỏi lại khi thiếu thông tin** (không đoán handle/URL) và **bắt buộc xác nhận yes/no** trước mọi hành động không hoàn tác (gửi Telegram, ghi file).
 
-Ví dụ: "Research agent: tìm tin theo từ khóa / theo tài khoản, đọc URL và tổng hợp thành digest."
+Kết quả tối ưu qua 4 version (đo bằng eval tự động, không phải cảm giác): base eval `0.70 → 0.95 → 1.00 → 1.00`; group eval của nhóm đạt `7/10` ở v3 với 3 fail đã phân tích nguyên nhân.
 
 **Link dùng thử (truy cập được trong showdown):**
 
-> Dán public URL nếu người khác cần mở từ máy riêng; localhost cũng được nếu demo trực tiếp trên máy trình chiếu. Streamlit được khuyến nghị, nhưng nhóm có thể dùng bất kỳ framework nào.
->
-> URL:
+> URL: `http://localhost:8501` (demo trực tiếp trên máy trình chiếu — chạy `streamlit run app.py` trong `starter_v0/`).
+> Public URL qua Cloudflare Tunnel sẽ dán vào đây trước showdown: `cloudflared tunnel --url http://localhost:8501`
+
+Lưu ý khi thử: API key của research tools (Tavily/RapidAPI/Firecrawl) chưa gắn, nên tool sống trả error có kiểm soát — **cái cần chấm là trace: agent chọn tool nào, args gì**, hiển thị đầy đủ trên UI.
 
 ## A2. Tool agent có
 
-> Liệt kê các tool agent đang dùng. Mỗi tool 1 dòng: tên + làm được gì.
-
 | Tên tool | Làm được gì | Tool mới nhóm thêm? |
 |---|---|---|
-| clarify | hỏi lại người dùng khi thiếu thông tin | không |
-|  |  |  |
-|  |  |  |
+| clarify | hỏi lại khi thiếu thông tin; xác nhận yes/no trước hành động nhạy cảm | không |
+| timeline | lấy bài đăng gần đây CỦA một tài khoản cụ thể | không |
+| social_search | tìm bài đăng VỀ một chủ đề/từ khóa (Latest/Top) | không |
+| lookup | tìm web, phân biệt topic news/general, timeframe day→year | không |
+| fetch | đọc nội dung một URL cụ thể | không |
+| format | trình bày items đã có thành digest markdown | không |
+| send | gửi text lên Telegram — bắt buộc confirm trước, `confirmed=true` mới gửi | không |
+| policy / papers / paper_text | tìm policy nội bộ / tìm paper arXiv / trích text PDF | không (optional có sẵn) |
+| **dedupe** | gộp item trùng theo url (bỏ utm_*) hoặc title chuẩn hoá | **CÓ** |
+| **save_note** | ghi digest ra `notes/*.md`; chặn path traversal; cần `confirmed=true` | **CÓ** |
+| **rank_sources** | xếp hạng nguồn theo Tier 1/2/3 của `source-citation-policy.md`; cảnh báo arXiv chưa peer-review | **CÓ** |
+| **extract_entities** | bóc tên người/tổ chức/handle từ text đã fetch (heuristic + confidence) | **CÓ** |
+
+4 tool mới đều chạy local, không cần API key, kèm `TOOL.md` + declaration đầy đủ trong `tools.yaml` (14/14 khai báo).
 
 ## A3. Câu hỏi mẫu để thử
 
-> 3–5 câu hỏi/yêu cầu mẫu để team khác tự thử agent ngay.
-
-1.
-2.
-3.
+1. `Tin tức AI hôm nay có gì nổi bật?` → `lookup(query="AI", topic="news", timeframe="day")`
+2. `Tóm tắt 5 tweet mới nhất giúp mình` (không nói của ai) → agent **hỏi lại** thay vì đoán; trả lời `Của Elon Musk nhé` → `timeline(screenname="elonmusk", limit=5)`
+3. `Đăng bản tin này lên Telegram giúp mình` → hỏi xác nhận yes/no trước, không gửi thẳng
+4. `Giải giúp mình nguyên hàm của x^2` → từ chối lịch sự, **0 tool call**
+5. `Mình có 2 bài cùng tên 'GPT-5 ra mắt' ở abc.com và xyz.com, gộp bài trùng tên giúp mình` → `dedupe` (tool nhóm tự viết)
 
 ## A4. Kịch bản demo đã rehearse
 
-> Chuẩn bị 3–5 scenario. Mỗi scenario cần cho thấy tool đã làm gì và một thay đổi cụ thể giữa các version.
-
 | Scenario | Tool trace cần thấy | Câu chuyện cải thiện version | Fallback run/transcript |
 |---|---|---|---|
-|  |  |  |  |
+| Thiếu handle → hỏi lại → điền tiếp | `clarify` → `timeline(screenname="elonmusk", limit=5)` | v0 bịa `sama` (R10 FAIL) → v1 hỏi lại (PASS). Demo bằng chế độ *So sánh 2 version* trên UI: snapshot v0 vs v3 cạnh nhau | `runs/v0_B_base_...json` vs `runs/v1_B_base_...json` |
+| Gửi Telegram phải xác nhận | `clarify(response_type="yes_no")`, chỉ `send(confirmed=true)` sau khi user đồng ý | v0 gửi thẳng không hỏi (R12 FAIL) → v1 có boundary (PASS); mặt còn lại G10-cũ: đã confirm thì không hỏi vòng nữa | `runs/v2_B_group_...json` (G04, G10 PASS) |
+| Câu ngoài phạm vi (toán/code/dịch) | **không có tool call nào** | v0 gọi `send` để trả lời toán và code (R08, R14 FAIL) → v1 từ chối đúng (PASS) | `runs/v3_B_base_...json` (R08, R14 PASS) |
+| Hỏi lại đúng kiểu câu trả lời | `clarify(response_type="text")` khi xin URL | v1 route đúng nhưng thiếu `response_type` (R11 FAIL) → v2 viết convention vào description của clarify (PASS). Luận điểm: **tool declaration cũng là prompt** | `runs/v1_...json` (R11 FAIL) vs `runs/v2_B_base_...json` (20/20) |
+| Tool mới + giới hạn hiện tại | `dedupe` được gọi đúng lúc, nhưng v3 còn bỏ `key=title` (G10 FAIL — trung thực) | v3 thêm 4 declaration: base không regress (20/20), group lộ 3 lỗi mới đo được → giả thuyết cho v4 | `runs/v3_B_group_...json` |
 
 ---
 
