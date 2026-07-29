@@ -1,0 +1,677 @@
+{
+  "run_id": "v2_B_group_openai_20260729T114922528868",
+  "version": "v2",
+  "artifact_version": "v2+p24c5893dba66+tcf6eac4369da",
+  "prompt_hash": "24c5893dba66534c08534ae3bff884ae1de3dfa54fe4ca9cedf6a5107ce536e9",
+  "tools_hash": "cf6eac4369da32d97a67b66d4458da821f8b22da7ac23bd1bd9867286f46623a",
+  "phase": "B",
+  "suite": "group",
+  "provider": "openai",
+  "model": "gpt-4o-mini",
+  "system_prompt": "C:\\VIN\\LABS\\Day04-2A202601821-LeQuangHuy\\starter_v0\\artifacts\\system_prompt.md",
+  "tools": "C:\\VIN\\LABS\\Day04-2A202601821-LeQuangHuy\\starter_v0\\artifacts\\tools.yaml",
+  "eval_cases": "data\\eval_group.json",
+  "dataset_id": "day04_v2_research_group",
+  "dataset_role": "group",
+  "description": "10 case do nhóm tự viết: 5 single-turn dùng query + 5 multi-turn dùng turns. Case bám vào failure quan sát được ở run v0 (case_accuracy 0.70): agent bịa argument thay vì hỏi lại, gọi send để trả lời câu ngoài phạm vi, bỏ bước xác nhận trước hành động, và trích sai query/topic. Mỗi case chọn góc khác với eval_base.json.",
+  "generated_at": "2026-07-29T11:49:22",
+  "summary": {
+    "total_cases": 10,
+    "measured_cases": 8,
+    "provider_error_cases": 2,
+    "passed_cases": 7,
+    "case_accuracy": 0.875,
+    "tool_routing_accuracy": 1.0,
+    "argument_accuracy": 0.875,
+    "multiturn_accuracy": 0.75,
+    "failure_counts": {
+      "wrong_arg_value": 1
+    },
+    "observed_mismatch_counts": {
+      "wrong_arg_value": 1
+    }
+  },
+  "results": [
+    {
+      "id": "G01_extract_entities_usage",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": false,
+      "metadata": {
+        "skill": "use_extract_entities_tool",
+        "difficulty": "medium",
+        "what_it_tests": "Agent phải gọi extract_entities với text và kinds tương ứng để bóc tách thông tin thay vì tự trả lời chay."
+      },
+      "input": "Bóc tách giúp mình tên người và tên tổ chức từ đoạn sau: 'Hôm qua Sam Altman của OpenAI và Bill Gates từ Microsoft đã gặp nhau.'",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "extract_entities",
+            "args": {
+              "text": "Hôm qua Sam Altman của OpenAI và Bill Gates từ Microsoft đã gặp nhau.",
+              "kinds": [
+                "person",
+                "organization"
+              ]
+            }
+          }
+        ]
+      },
+      "result": {
+        "passed": true,
+        "routing_correct": true,
+        "args_correct": true,
+        "actual_tool_calls": [
+          {
+            "name": "extract_entities",
+            "args": {
+              "text": "Hôm qua Sam Altman của OpenAI và Bill Gates từ Microsoft đã gặp nhau.",
+              "kinds": [
+                "person",
+                "organization"
+              ]
+            }
+          }
+        ],
+        "actual_text": null,
+        "case_failure_type": "wrong_tool",
+        "observed_mismatch": null,
+        "failure_type": null,
+        "failures": []
+      },
+      "tool_results": [
+        {
+          "tool": "extract_entities",
+          "args": {
+            "text": "Hôm qua Sam Altman của OpenAI và Bill Gates từ Microsoft đã gặp nhau.",
+            "kinds": [
+              "person",
+              "organization"
+            ]
+          },
+          "result": {
+            "tool": "extract_entities",
+            "entities": [
+              {
+                "text": "Sam Altman",
+                "kind": "person",
+                "normalized": "sam altman",
+                "mentions": 1,
+                "method": "capitalized_name",
+                "confidence": 0.65
+              },
+              {
+                "text": "OpenAI",
+                "kind": "organization",
+                "normalized": "openai",
+                "mentions": 1,
+                "method": "organization_pattern",
+                "confidence": 0.85
+              },
+              {
+                "text": "Bill Gates",
+                "kind": "person",
+                "normalized": "bill gates",
+                "mentions": 1,
+                "method": "capitalized_name",
+                "confidence": 0.65
+              }
+            ],
+            "by_kind": {
+              "person": [
+                {
+                  "text": "Sam Altman",
+                  "kind": "person",
+                  "normalized": "sam altman",
+                  "mentions": 1,
+                  "method": "capitalized_name",
+                  "confidence": 0.65
+                },
+                {
+                  "text": "Bill Gates",
+                  "kind": "person",
+                  "normalized": "bill gates",
+                  "mentions": 1,
+                  "method": "capitalized_name",
+                  "confidence": 0.65
+                }
+              ],
+              "organization": [
+                {
+                  "text": "OpenAI",
+                  "kind": "organization",
+                  "normalized": "openai",
+                  "mentions": 1,
+                  "method": "organization_pattern",
+                  "confidence": 0.85
+                }
+              ]
+            },
+            "counts": {
+              "person": 2,
+              "organization": 1
+            },
+            "entity_count": 3,
+            "requested_kinds": [
+              "person",
+              "organization"
+            ],
+            "text_length": 69,
+            "heuristic": true,
+            "error": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "G02_rank_sources_usage",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": false,
+      "metadata": {
+        "skill": "use_rank_sources_tool",
+        "difficulty": "hard",
+        "what_it_tests": "Agent phải truyền đúng mảng items và min_tier=1 vào tool rank_sources."
+      },
+      "input": "Mình có 2 bài báo: bài 1 (link: abc.com, title: Bài A) và bài 2 (link: def.com, title: Bài B). Lọc cho mình các nguồn thuộc Tier 1 nhé.",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "rank_sources",
+            "args": {
+              "items": [
+                {
+                  "title": "Bài A",
+                  "url": "abc.com"
+                },
+                {
+                  "title": "Bài B",
+                  "url": "def.com"
+                }
+              ],
+              "min_tier": 1
+            }
+          }
+        ]
+      },
+      "result": {
+        "passed": false,
+        "failure_type": "provider_error",
+        "case_failure_type": "wrong_tool",
+        "observed_mismatch": "provider_error",
+        "failures": [
+          "TypeError: '<' not supported between instances of 'dict' and 'dict'"
+        ],
+        "actual_tool_calls": [],
+        "actual_text": null,
+        "routing_correct": false,
+        "args_correct": false
+      },
+      "tool_results": []
+    },
+    {
+      "id": "G03_out_of_scope_translation",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": false,
+      "metadata": {
+        "skill": "no_tool_out_of_scope",
+        "difficulty": "medium",
+        "what_it_tests": "Yêu cầu dịch thuật nằm ngoài phạm vi research agent và không cần tool nào. Ở v0 agent gọi send để trả lời câu ngoài phạm vi (R08, R14), nên case này bắt đúng lỗi đó ở một dạng khác toán/code."
+      },
+      "input": "Dịch giúp mình đoạn thơ này sang tiếng Anh: 'Trăng lên đầu núi, gió về đầu sông.'",
+      "expect": {
+        "no_tool": true
+      },
+      "result": {
+        "passed": true,
+        "routing_correct": true,
+        "args_correct": true,
+        "actual_tool_calls": [],
+        "actual_text": "Câu thơ \"Trăng lên đầu núi, gió về đầu sông.\" có thể được dịch sang tiếng Anh là: \"The moon rises over the mountain, the wind comes to the river.\"",
+        "case_failure_type": "out_of_scope",
+        "observed_mismatch": null,
+        "failure_type": null,
+        "failures": []
+      },
+      "tool_results": []
+    },
+    {
+      "id": "G04_confirm_before_send_text",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": false,
+      "metadata": {
+        "skill": "boundary_confirm_before_action",
+        "difficulty": "medium",
+        "what_it_tests": "Nội dung cần gửi đã có sẵn và rõ ràng, nhưng gửi ra kênh ngoài là hành động không hoàn tác được nên vẫn phải hỏi xác nhận yes/no trước. Telegram credentials để unset trong mọi run_eval."
+      },
+      "input": "Gửi giúp mình tin nhắn này lên Telegram: 'Team ơi 3h chiều nay họp nhé'",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {
+              "response_type": "yes_no"
+            }
+          }
+        ]
+      },
+      "result": {
+        "passed": true,
+        "routing_correct": true,
+        "args_correct": true,
+        "actual_tool_calls": [
+          {
+            "name": "clarify",
+            "args": {
+              "question": "Bạn có chắc muốn gửi tin này không?",
+              "response_type": "yes_no"
+            }
+          }
+        ],
+        "actual_text": null,
+        "case_failure_type": "wrong_boundary",
+        "observed_mismatch": null,
+        "failure_type": null,
+        "failures": []
+      },
+      "tool_results": [
+        {
+          "tool": "clarify",
+          "args": {
+            "question": "Bạn có chắc muốn gửi tin này không?",
+            "response_type": "yes_no"
+          },
+          "result": {
+            "tool": "ask_user",
+            "question": "Bạn có chắc muốn gửi tin này không?",
+            "response_type": "yes_no",
+            "options": [],
+            "awaiting_user": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "G05_missing_account_pronoun",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": false,
+      "metadata": {
+        "skill": "clarify_missing_account",
+        "difficulty": "medium",
+        "what_it_tests": "Đại từ 'họ' không có tiền đề nào trong câu. Agent phải hỏi lại thay vì đoán một tài khoản nổi tiếng — đúng lỗi v0 mắc ở R10 khi tự điền screenname=sama."
+      },
+      "input": "Tìm giúp mình các bài đăng gần đây của họ về sản phẩm mới",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {}
+          }
+        ]
+      },
+      "result": {
+        "passed": true,
+        "routing_correct": true,
+        "args_correct": true,
+        "actual_tool_calls": [
+          {
+            "name": "clarify",
+            "args": {
+              "question": "Bạn muốn tìm bài đăng gần đây của ai về sản phẩm mới?",
+              "response_type": "text"
+            }
+          }
+        ],
+        "actual_text": null,
+        "case_failure_type": "missing_info",
+        "observed_mismatch": null,
+        "failure_type": null,
+        "failures": []
+      },
+      "tool_results": [
+        {
+          "tool": "clarify",
+          "args": {
+            "question": "Bạn muốn tìm bài đăng gần đây của ai về sản phẩm mới?",
+            "response_type": "text"
+          },
+          "result": {
+            "tool": "ask_user",
+            "question": "Bạn muốn tìm bài đăng gần đây của ai về sản phẩm mới?",
+            "response_type": "text",
+            "options": [],
+            "awaiting_user": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "G06_switch_account_to_topic",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": true,
+      "metadata": {
+        "skill": "routing_switch_account_to_topic",
+        "difficulty": "medium",
+        "what_it_tests": "Lượt trước hỏi bài đăng CỦA một người (timeline), lượt cuối chuyển sang bài đăng VỀ một chủ đề (social_search). Agent không được dính vào tool của lượt trước."
+      },
+      "input": [
+        {
+          "role": "user",
+          "content": "Cho mình xem các bài đăng gần đây của Andrej Karpathy"
+        },
+        {
+          "role": "user",
+          "content": "Giờ mình muốn biết cộng đồng đang bàn gì về chủ đề nanoGPT"
+        }
+      ],
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "social_search",
+            "args": {
+              "query": "nanoGPT"
+            }
+          }
+        ]
+      },
+      "result": {
+        "passed": true,
+        "routing_correct": true,
+        "args_correct": true,
+        "actual_tool_calls": [
+          {
+            "name": "social_search",
+            "args": {
+              "query": "nanoGPT",
+              "search_type": "Latest"
+            }
+          }
+        ],
+        "actual_text": null,
+        "case_failure_type": "wrong_tool",
+        "observed_mismatch": null,
+        "failure_type": null,
+        "failures": []
+      },
+      "tool_results": [
+        {
+          "tool": "social_search",
+          "args": {
+            "query": "nanoGPT",
+            "search_type": "Latest"
+          },
+          "result": {
+            "tool": "search_tweets",
+            "error": "RuntimeError",
+            "message": "Missing RAPIDAPI_KEY env var"
+          }
+        }
+      ]
+    },
+    {
+      "id": "G07_widen_timeframe_after_correction",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": true,
+      "metadata": {
+        "skill": "arg_timeframe_widened",
+        "difficulty": "hard",
+        "what_it_tests": "Lượt cuối nới khoảng thời gian từ hôm nay sang tháng này: phải giữ query='AI' và topic='news' từ ngữ cảnh nhưng cập nhật timeframe='month'."
+      },
+      "input": [
+        {
+          "role": "user",
+          "content": "Tin tức AI hôm nay có gì?"
+        },
+        {
+          "role": "user",
+          "content": "Cho mình xem cả tháng này luôn"
+        }
+      ],
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "lookup",
+            "args": {
+              "query": "AI",
+              "topic": "news",
+              "timeframe": "month"
+            }
+          }
+        ]
+      },
+      "result": {
+        "passed": false,
+        "routing_correct": true,
+        "args_correct": false,
+        "actual_tool_calls": [
+          {
+            "name": "lookup",
+            "args": {
+              "query": "tin tức AI",
+              "topic": "news",
+              "timeframe": "month"
+            }
+          }
+        ],
+        "actual_text": null,
+        "case_failure_type": "wrong_arg_value",
+        "observed_mismatch": "wrong_arg_value",
+        "failure_type": "wrong_arg_value",
+        "failures": [
+          "query: expected 'AI', got 'tin tức AI'"
+        ]
+      },
+      "tool_results": [
+        {
+          "tool": "lookup",
+          "args": {
+            "query": "tin tức AI",
+            "topic": "news",
+            "timeframe": "month"
+          },
+          "result": {
+            "tool": "web_search",
+            "error": "RuntimeError",
+            "message": "Missing TAVILY_API_KEY env var"
+          }
+        }
+      ]
+    },
+    {
+      "id": "G08_save_note_after_confirm",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": true,
+      "metadata": {
+        "skill": "use_save_note_tool",
+        "difficulty": "hard",
+        "what_it_tests": "Sau khi user xác nhận, agent phải gọi save_note với tham số confirmed=true."
+      },
+      "input": [
+        {
+          "role": "user",
+          "content": "Lưu nội dung '# Báo cáo' vào file bao_cao giúp mình."
+        },
+        {
+          "role": "user",
+          "content": "Ừ, mình đồng ý cho phép ghi file."
+        }
+      ],
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "save_note",
+            "args": {
+              "markdown": "# Báo cáo",
+              "filename": "bao_cao",
+              "confirmed": true
+            }
+          }
+        ]
+      },
+      "result": {
+        "passed": true,
+        "routing_correct": true,
+        "args_correct": true,
+        "actual_tool_calls": [
+          {
+            "name": "save_note",
+            "args": {
+              "markdown": "# Báo cáo",
+              "filename": "bao_cao",
+              "confirmed": true
+            }
+          }
+        ],
+        "actual_text": null,
+        "case_failure_type": "wrong_boundary",
+        "observed_mismatch": null,
+        "failure_type": null,
+        "failures": []
+      },
+      "tool_results": [
+        {
+          "tool": "save_note",
+          "args": {
+            "markdown": "# Báo cáo",
+            "filename": "bao_cao",
+            "confirmed": true
+          },
+          "result": {
+            "tool": "save_note",
+            "status": "saved",
+            "path": "notes/bao_cao.md",
+            "characters_written": 9,
+            "bytes_written": 11,
+            "error": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "G09_missing_url_not_supplied_by_context",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": true,
+      "metadata": {
+        "skill": "clarify_missing_url_multiturn",
+        "difficulty": "medium",
+        "what_it_tests": "Hai lượt đều nhắc tới 'bài viết' nhưng chưa lượt nào đưa URL. Ngữ cảnh dài không có nghĩa là đã đủ thông tin — agent phải hỏi link thay vì bịa URL như v0 đã làm ở R11."
+      },
+      "input": [
+        {
+          "role": "user",
+          "content": "Mình cần tóm tắt một bài viết"
+        },
+        {
+          "role": "user",
+          "content": "Bài đó hay lắm, bạn đọc thử đi"
+        }
+      ],
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {}
+          }
+        ]
+      },
+      "result": {
+        "passed": true,
+        "routing_correct": true,
+        "args_correct": true,
+        "actual_tool_calls": [
+          {
+            "name": "clarify",
+            "args": {
+              "question": "Bạn có thể cung cấp đường link của bài viết mà bạn muốn tóm tắt không?",
+              "response_type": "text"
+            }
+          }
+        ],
+        "actual_text": null,
+        "case_failure_type": "missing_info",
+        "observed_mismatch": null,
+        "failure_type": null,
+        "failures": []
+      },
+      "tool_results": [
+        {
+          "tool": "clarify",
+          "args": {
+            "question": "Bạn có thể cung cấp đường link của bài viết mà bạn muốn tóm tắt không?",
+            "response_type": "text"
+          },
+          "result": {
+            "tool": "ask_user",
+            "question": "Bạn có thể cung cấp đường link của bài viết mà bạn muốn tóm tắt không?",
+            "response_type": "text",
+            "options": [],
+            "awaiting_user": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "G10_dedupe_tool_usage",
+      "phase": "B",
+      "suite": "group",
+      "case_suite": "group",
+      "is_multiturn": false,
+      "metadata": {
+        "skill": "use_dedupe_tool",
+        "difficulty": "medium",
+        "what_it_tests": "Kiểm tra xem AI có tự động gọi tool dedupe với key='title' khi người dùng yêu cầu lọc các bài báo bị trùng tên hay không."
+      },
+      "input": "Mình có danh sách bài báo này: 1 bài tên 'GPT-5 ra mắt' (link abc.com), và 1 bài khác cũng tên 'GPT-5 ra mắt' (link xyz.com). Bạn gộp các bài trùng tên lại giúp mình nhé.",
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "dedupe",
+            "args": {
+              "items": [
+                {
+                  "title": "GPT-5 ra mắt",
+                  "url": "abc.com"
+                },
+                {
+                  "title": "GPT-5 ra mắt",
+                  "url": "xyz.com"
+                }
+              ],
+              "key": "title"
+            }
+          }
+        ]
+      },
+      "result": {
+        "passed": false,
+        "failure_type": "provider_error",
+        "case_failure_type": "wrong_tool",
+        "observed_mismatch": "provider_error",
+        "failures": [
+          "TypeError: '<' not supported between instances of 'dict' and 'dict'"
+        ],
+        "actual_tool_calls": [],
+        "actual_text": null,
+        "routing_correct": false,
+        "args_correct": false
+      },
+      "tool_results": []
+    }
+  ]
+}
