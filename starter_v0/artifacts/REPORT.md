@@ -75,7 +75,12 @@ Use actual failures from `results[*].result.failures`.
 
 | Case ID | Failure Type | Actual Tool Calls | What Failed | Fix |
 |---|---|---|---|---|
-|  |  |  |  |  |
+| R08_out_of_scope | out_of_scope | `send` | Lẽ ra không gọi tool (`no_tool`), nhưng agent lại gọi `send` để trả lời toán. | Thêm luật cấm gọi tool `send` với các câu hỏi toán học/code. |
+| R10_missing_handle | missing_info | `timeline(screenname="sama")` | Thiếu `clarify`, agent tự đoán bừa handle "sama". | Bắt buộc dùng `clarify` khi user chưa cung cấp rõ tài khoản. |
+| R11_missing_url | missing_info | `fetch(url="https://example.com/article")` | Thiếu `clarify`, agent tự bịa URL ảo. | Bắt buộc dùng `clarify` xin link khi user bảo "bài này" mà chưa có URL. |
+| R12_confirm_before_send | wrong_boundary | `send(text="...")` | Thiếu `clarify(response_type="yes_no")` trước khi gửi. | Thêm luật bắt buộc hỏi xác nhận (yes_no) trước khi gọi tool `send`. |
+| R13_parallel_web_and_tweets | wrong_tool | `lookup(query="AI news")` | Gọi `lookup` sai arg, gộp chữ "news" vào query thay vì dùng `topic="news"`. | Làm rõ mô tả của arg `query` và `topic` trong `tools.yaml`. |
+| R14_out_of_scope_coding | out_of_scope | `send` | Gọi tool `send` để trả lời câu hỏi viết code. | Cấm dùng `send` để trả lời code, yêu cầu từ chối thẳng. |
 
 ## B3. Team eval cases
 

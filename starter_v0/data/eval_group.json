@@ -2,14 +2,31 @@
   "dataset_id": "day04_v2_research_group",
   "dataset_role": "group",
   "description": "10 case do nhóm tự viết: 5 single-turn dùng query + 5 multi-turn dùng turns. Case bám vào failure quan sát được ở run v0 (case_accuracy 0.70): agent bịa argument thay vì hỏi lại, gọi send để trả lời câu ngoài phạm vi, bỏ bước xác nhận trước hành động, và trích sai query/topic. Mỗi case chọn góc khác với eval_base.json.",
-  "allowed_failure_types": ["wrong_tool", "wrong_arg_value", "wrong_boundary", "unnecessary_tool", "out_of_scope", "missing_info"],
+  "allowed_failure_types": [
+    "wrong_tool",
+    "wrong_arg_value",
+    "wrong_boundary",
+    "unnecessary_tool",
+    "out_of_scope",
+    "missing_info"
+  ],
   "cases": [
     {
       "id": "G01_url_with_topic_lure",
-      "phase": "B", "suite": "group",
+      "phase": "B",
+      "suite": "group",
       "query": "Bài này nói gì về Gemini vậy bạn: https://blog.google/technology/ai/google-gemini-ai/",
       "failure_type": "wrong_tool",
-      "expect": {"tool_calls": [{"name": "fetch", "args": {"url": "https://blog.google/technology/ai/google-gemini-ai/"}}]},
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "fetch",
+            "args": {
+              "url": "https://blog.google/technology/ai/google-gemini-ai/"
+            }
+          }
+        ]
+      },
       "metadata": {
         "skill": "routing_url_over_search",
         "difficulty": "medium",
@@ -18,10 +35,22 @@
     },
     {
       "id": "G02_top_and_limit_together",
-      "phase": "B", "suite": "group",
+      "phase": "B",
+      "suite": "group",
       "query": "Cho mình 10 bài đăng được chia sẻ nhiều nhất về Llama 4",
       "failure_type": "wrong_arg_value",
-      "expect": {"tool_calls": [{"name": "social_search", "args": {"query": "Llama 4", "search_type": "Top", "limit": 10}}]},
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "social_search",
+            "args": {
+              "query": "Llama 4",
+              "search_type": "Top",
+              "limit": 10
+            }
+          }
+        ]
+      },
       "metadata": {
         "skill": "arg_search_type_and_limit",
         "difficulty": "hard",
@@ -30,10 +59,13 @@
     },
     {
       "id": "G03_out_of_scope_translation",
-      "phase": "B", "suite": "group",
+      "phase": "B",
+      "suite": "group",
       "query": "Dịch giúp mình đoạn thơ này sang tiếng Anh: 'Trăng lên đầu núi, gió về đầu sông.'",
       "failure_type": "out_of_scope",
-      "expect": {"no_tool": true},
+      "expect": {
+        "no_tool": true
+      },
       "metadata": {
         "skill": "no_tool_out_of_scope",
         "difficulty": "medium",
@@ -42,10 +74,20 @@
     },
     {
       "id": "G04_confirm_before_send_text",
-      "phase": "B", "suite": "group",
+      "phase": "B",
+      "suite": "group",
       "query": "Gửi giúp mình tin nhắn này lên Telegram: 'Team ơi 3h chiều nay họp nhé'",
       "failure_type": "wrong_boundary",
-      "expect": {"tool_calls": [{"name": "clarify", "args": {"response_type": "yes_no"}}]},
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {
+              "response_type": "yes_no"
+            }
+          }
+        ]
+      },
       "metadata": {
         "skill": "boundary_confirm_before_action",
         "difficulty": "medium",
@@ -54,10 +96,18 @@
     },
     {
       "id": "G05_missing_account_pronoun",
-      "phase": "B", "suite": "group",
+      "phase": "B",
+      "suite": "group",
       "query": "Tìm giúp mình các bài đăng gần đây của họ về sản phẩm mới",
       "failure_type": "missing_info",
-      "expect": {"tool_calls": [{"name": "clarify", "args": {}}]},
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {}
+          }
+        ]
+      },
       "metadata": {
         "skill": "clarify_missing_account",
         "difficulty": "medium",
@@ -66,13 +116,29 @@
     },
     {
       "id": "G06_switch_account_to_topic",
-      "phase": "B", "suite": "group",
+      "phase": "B",
+      "suite": "group",
       "turns": [
-        {"role": "user", "content": "Cho mình xem các bài đăng gần đây của Andrej Karpathy"},
-        {"role": "user", "content": "Giờ mình muốn biết cộng đồng đang bàn gì về chủ đề nanoGPT"}
+        {
+          "role": "user",
+          "content": "Cho mình xem các bài đăng gần đây của Andrej Karpathy"
+        },
+        {
+          "role": "user",
+          "content": "Giờ mình muốn biết cộng đồng đang bàn gì về chủ đề nanoGPT"
+        }
       ],
       "failure_type": "wrong_tool",
-      "expect": {"tool_calls": [{"name": "social_search", "args": {"query": "nanoGPT"}}]},
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "social_search",
+            "args": {
+              "query": "nanoGPT"
+            }
+          }
+        ]
+      },
       "metadata": {
         "skill": "routing_switch_account_to_topic",
         "difficulty": "medium",
@@ -81,13 +147,31 @@
     },
     {
       "id": "G07_widen_timeframe_after_correction",
-      "phase": "B", "suite": "group",
+      "phase": "B",
+      "suite": "group",
       "turns": [
-        {"role": "user", "content": "Tin tức AI hôm nay có gì?"},
-        {"role": "user", "content": "Cho mình xem cả tháng này luôn"}
+        {
+          "role": "user",
+          "content": "Tin tức AI hôm nay có gì?"
+        },
+        {
+          "role": "user",
+          "content": "Cho mình xem cả tháng này luôn"
+        }
       ],
       "failure_type": "wrong_arg_value",
-      "expect": {"tool_calls": [{"name": "lookup", "args": {"query": "AI", "topic": "news", "timeframe": "month"}}]},
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "lookup",
+            "args": {
+              "query": "AI",
+              "topic": "news",
+              "timeframe": "month"
+            }
+          }
+        ]
+      },
       "metadata": {
         "skill": "arg_timeframe_widened",
         "difficulty": "hard",
@@ -96,14 +180,26 @@
     },
     {
       "id": "G08_cancelled_before_acting",
-      "phase": "B", "suite": "group",
+      "phase": "B",
+      "suite": "group",
       "turns": [
-        {"role": "user", "content": "Tìm giúp mình tin AI hôm nay"},
-        {"role": "user", "content": "Thôi khoan đã"},
-        {"role": "user", "content": "Trước khi tìm, nhắc lại giúp mình yêu cầu ban đầu của mình là gì"}
+        {
+          "role": "user",
+          "content": "Tìm giúp mình tin AI hôm nay"
+        },
+        {
+          "role": "user",
+          "content": "Thôi khoan đã"
+        },
+        {
+          "role": "user",
+          "content": "Trước khi tìm, nhắc lại giúp mình yêu cầu ban đầu của mình là gì"
+        }
       ],
       "failure_type": "unnecessary_tool",
-      "expect": {"no_tool": true},
+      "expect": {
+        "no_tool": true
+      },
       "metadata": {
         "skill": "no_tool_after_cancel",
         "difficulty": "medium",
@@ -112,13 +208,27 @@
     },
     {
       "id": "G09_missing_url_not_supplied_by_context",
-      "phase": "B", "suite": "group",
+      "phase": "B",
+      "suite": "group",
       "turns": [
-        {"role": "user", "content": "Mình cần tóm tắt một bài viết"},
-        {"role": "user", "content": "Bài đó hay lắm, bạn đọc thử đi"}
+        {
+          "role": "user",
+          "content": "Mình cần tóm tắt một bài viết"
+        },
+        {
+          "role": "user",
+          "content": "Bài đó hay lắm, bạn đọc thử đi"
+        }
       ],
       "failure_type": "missing_info",
-      "expect": {"tool_calls": [{"name": "clarify", "args": {}}]},
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "clarify",
+            "args": {}
+          }
+        ]
+      },
       "metadata": {
         "skill": "clarify_missing_url_multiturn",
         "difficulty": "medium",
@@ -127,13 +237,29 @@
     },
     {
       "id": "G10_send_after_explicit_confirm",
-      "phase": "B", "suite": "group",
+      "phase": "B",
+      "suite": "group",
       "turns": [
-        {"role": "user", "content": "Gửi tin nhắn 'Chốt deadline 5h chiều' lên Telegram giúp mình"},
-        {"role": "user", "content": "Ừ mình xác nhận, gửi luôn đi"}
+        {
+          "role": "user",
+          "content": "Gửi tin nhắn 'Chốt deadline 5h chiều' lên Telegram giúp mình"
+        },
+        {
+          "role": "user",
+          "content": "Ừ mình xác nhận, gửi luôn đi"
+        }
       ],
       "failure_type": "wrong_boundary",
-      "expect": {"tool_calls": [{"name": "send", "args": {"confirmed": true}}]},
+      "expect": {
+        "tool_calls": [
+          {
+            "name": "send",
+            "args": {
+              "confirmed": true
+            }
+          }
+        ]
+      },
       "metadata": {
         "skill": "boundary_act_after_confirm",
         "difficulty": "hard",
