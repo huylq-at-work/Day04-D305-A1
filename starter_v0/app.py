@@ -3,6 +3,10 @@
 UI này KHÔNG tự viết agent loop. Nó tái sử dụng `run_model_tool_loop` trong chat.py
 để trace hiển thị ở đây khớp chính xác với evidence trong runs/ và transcripts/.
 
+Bố cục theo kiểu ChatGPT: khu chat sạch ở giữa, mọi cấu hình và thông tin version
+nằm trong sidebar. Trace tool vẫn hiển thị inline dưới câu trả lời vì đó là bằng chứng
+bắt buộc phải nhìn thấy khi demo.
+
 Chạy:
     .venv\\Scripts\\streamlit.exe run app.py
 """
@@ -29,6 +33,12 @@ VERSIONS_DIR = ARTIFACTS_DIR / "versions"
 TRANSCRIPTS_DIR = ROOT / "transcripts"
 
 load_lab_env(ROOT)
+
+SUGGESTIONS = [
+    "Tin tức AI hôm nay có gì nổi bật?",
+    "Tweet mới nhất của Sam Altman là gì?",
+    "Tóm tắt bài này: https://openai.com/blog/gpt-5",
+]
 
 
 # ---------------------------------------------------------------- artifact sets
@@ -107,23 +117,28 @@ def run_agent(
 def render_trace(result: dict[str, Any]) -> None:
     """Trace từng tool: tên, args, round, status, result/error."""
     rounds = result.get("rounds") or []
-    if not rounds:
-        st.caption("Không có tool call nào trong lượt này.")
+    events = result.get("tool_events") or []
+    if not events:
         return
 
-    for record in rounds:
-        calls = record.get("tool_calls") or []
-        results = record.get("tool_results") or []
-        header = f"Round {record.get('round')} — {len(calls)} tool call(s)"
-        with st.expander(header, expanded=True):
+    labels = " · ".join(f"{STATUS_ICON[event_status(e)]} {e.get('tool')}" for e in events)
+    with st.expander(f"🔧 {len(events)} tool call · {labels}", expanded=False):
+        for record in rounds:
+            calls = record.get("tool_calls") or []
+            results = record.get("tool_results") or []
+            if not calls:
+                continue
+            st.markdown(f"<div class='trace-round'>Round {record.get('round')}</div>", unsafe_allow_html=True)
             if record.get("assistant_text"):
                 st.caption(record["assistant_text"])
-            if not calls:
-                st.caption("Model trả lời trực tiếp, không gọi tool.")
             for index, call in enumerate(calls):
                 event = results[index] if index < len(results) else {}
                 status = event_status(event)
-                st.markdown(f"{STATUS_ICON[status]} **`{call['name']}`** · round {record.get('round')} · `{status}`")
+                st.markdown(
+                    f"{STATUS_ICON[status]} **`{call['name']}`** "
+                    f"<span class='trace-meta'>round {record.get('round')} · {status}</span>",
+                    unsafe_allow_html=True,
+                )
                 st.caption("args")
                 st.json(call.get("args", {}), expanded=False)
                 st.caption("result")
@@ -135,15 +150,16 @@ def render_result(result: dict[str, Any], artifact: ArtifactVersion) -> None:
     if status == "provider_error":
         st.error(result["assistant_text"])
     elif status == "waiting_for_user":
-        st.warning(f"Agent đang hỏi lại: {result['assistant_text']}")
+        st.markdown(result.get("assistant_text") or "")
+        st.caption("⏸️ Agent đang chờ bạn bổ sung thông tin.")
     else:
         st.markdown(result.get("assistant_text") or "_(trống)_")
 
-    st.caption(
-        f"status = `{status}` · artifact_version = `{artifact.artifact_version}` · "
-        f"{len(result.get('tool_events') or [])} tool event(s)"
-    )
     render_trace(result)
+    st.markdown(
+        f"<div class='msg-meta'>{artifact.artifact_version} · status <code>{status}</code></div>",
+        unsafe_allow_html=True,
+    )
 
 
 # ---------------------------------------------------------------- transcript
@@ -192,48 +208,157 @@ def save_transcript() -> Path:
 
 # ---------------------------------------------------------------- page
 
-st.set_page_config(page_title="Research Agent — Day 04", layout="wide")
-st.title("🔎 Research Agent")
+st.set_page_config(
+    page_title="Research Agent",
+    page_icon="🔎",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 available_sets = artifact_sets()
 
-with st.sidebar:
-    st.header("Cấu hình")
-    provider_name = st.selectbox("Provider", ["openrouter", "openai", "anthropic", "gemini"])
-    model = st.text_input("Model (để trống = default của provider)", "")
-    version_label = st.text_input("Version label", "v0", help="Nhãn ghi vào transcript, ví dụ v0/v1/v2/v3.")
+# --------------------------------------------------------------------- sidebar
 
-    st.divider()
-    st.header("Artifact")
-    primary_set = st.selectbox("Bộ artifact chính", list(available_sets), index=0)
+with st.sidebar:
+    if st.button("＋  Hội thoại mới", use_container_width=True):
+        for key in ("history", "turns", "transcript"):
+            st.session_state.pop(key, None)
+        st.rerun()
+
+    st.markdown("<div class='side-label'>Model</div>", unsafe_allow_html=True)
+    provider_name = st.selectbox("Provider", ["openrouter", "openai", "anthropic", "gemini"], label_visibility="collapsed")
+    model = st.text_input("Model", "", placeholder="Model (trống = default)", label_visibility="collapsed")
+
+    st.markdown("<div class='side-label'>Artifact</div>", unsafe_allow_html=True)
+    version_label = st.text_input("Version", "v0", placeholder="v0", label_visibility="collapsed")
+    primary_set = st.selectbox("Bộ artifact", list(available_sets), index=0, label_visibility="collapsed")
     compare_mode = st.toggle(
-        "Chế độ so sánh 2 version",
+        "So sánh 2 version",
         value=False,
-        help="Chạy CÙNG một câu hỏi trên 2 bộ artifact. Chế độ này chạy single-shot, không mang lịch sử hội thoại.",
+        help="Chạy CÙNG một câu hỏi trên 2 bộ artifact. Chế độ này single-shot, không mang lịch sử hội thoại.",
     )
     compare_set = None
     if compare_mode:
         others = [name for name in available_sets if name != primary_set]
         if others:
-            compare_set = st.selectbox("Bộ artifact đối chứng", others)
+            compare_set = st.selectbox("Bộ đối chứng", others, label_visibility="collapsed")
         else:
-            st.info(
-                "Chưa có snapshot để so sánh. R1 copy `system_prompt.md` + `tools.yaml` "
-                "vào `artifacts/versions/<label>/` sau mỗi version."
+            st.caption(
+                "Chưa có snapshot. R1 copy `system_prompt.md` + `tools.yaml` "
+                "vào `artifacts/versions/<label>/`."
             )
 
-    st.divider()
-    st.header("Agent loop")
-    max_tool_rounds = st.slider("Max tool rounds", 1, 6, 4)
-    history_window = st.slider("History window (số cặp user/assistant)", 0, 10, 5)
+    with st.expander("⚙️ Agent loop"):
+        max_tool_rounds = st.slider("Max tool rounds", 1, 6, 4)
+        history_window = st.slider("History window (cặp user/assistant)", 0, 10, 5)
 
-    st.divider()
-    if st.button("🔄 Hội thoại mới", use_container_width=True):
-        for key in ("history", "turns", "transcript"):
-            st.session_state.pop(key, None)
-        st.rerun()
+# --------------------------------------------------------------------- styling
 
-# Session state
+MAIN_WIDTH = "70rem" if (compare_mode and compare_set) else "48rem"
+
+st.markdown(
+    f"""
+    <style>
+      /* ---- chrome ---- */
+      [data-testid="stHeader"] {{ background: transparent; }}
+      [data-testid="stAppDeployButton"] {{ display: none; }}
+      [data-testid="stMainBlockContainer"] {{
+          max-width: {MAIN_WIDTH};
+          padding-top: 3rem;
+          padding-bottom: 7rem;
+      }}
+
+      /* ---- sidebar ---- */
+      [data-testid="stSidebar"] {{
+          background: #171717;
+          border-right: 1px solid #2a2a2a;
+      }}
+      [data-testid="stSidebar"] .side-label {{
+          font-size: .7rem;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+          color: #8e8e8e;
+          margin: 1.15rem 0 .35rem 0;
+      }}
+      [data-testid="stSidebar"] [data-testid="stExpander"] {{
+          border: none;
+          background: transparent;
+      }}
+
+      /* ---- messages ---- */
+      [data-testid="stChatMessage"] {{
+          background: transparent;
+          padding: .1rem 0 1.4rem 0;
+          gap: .75rem;
+      }}
+      [data-testid="stChatMessageAvatarUser"] {{ display: none; }}
+      [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {{
+          justify-content: flex-end;
+      }}
+      [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
+      [data-testid="stChatMessageContent"] {{
+          background: #303030;
+          border-radius: 1.35rem;
+          padding: .65rem 1.05rem;
+          flex-grow: 0;
+          max-width: 75%;
+      }}
+      [data-testid="stChatMessageAvatarAssistant"] {{
+          background: transparent;
+          border: 1px solid #4a4a4a;
+          color: #ececec;
+      }}
+
+      /* ---- tool trace ---- */
+      [data-testid="stMainBlockContainer"] [data-testid="stExpander"] {{
+          border: 1px solid #3a3a3a;
+          border-radius: .85rem;
+          background: #1b1b1b;
+          margin-top: .5rem;
+      }}
+      [data-testid="stMainBlockContainer"] [data-testid="stExpander"] summary {{
+          font-size: .82rem;
+          color: #a8a8a8;
+      }}
+      .trace-round {{
+          font-size: .7rem;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+          color: #8e8e8e;
+          margin: .6rem 0 .3rem 0;
+          border-top: 1px solid #2f2f2f;
+          padding-top: .6rem;
+      }}
+      .trace-meta {{ color: #8e8e8e; font-size: .78rem; }}
+      .msg-meta {{
+          color: #6f6f6f;
+          font-size: .72rem;
+          margin-top: .45rem;
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }}
+
+      /* ---- composer ---- */
+      [data-testid="stBottomBlockContainer"] {{
+          max-width: {MAIN_WIDTH};
+          padding-bottom: 1.25rem;
+      }}
+      [data-testid="stChatInput"] {{
+          background: #303030;
+          border: 1px solid #4a4a4a;
+          border-radius: 1.6rem;
+      }}
+
+      /* ---- empty state ---- */
+      .hero {{ text-align: center; margin: 5.5rem 0 2rem 0; }}
+      .hero h1 {{ font-size: 1.85rem; font-weight: 600; margin-bottom: .4rem; }}
+      .hero p {{ color: #9b9b9b; font-size: .92rem; }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# --------------------------------------------------------------------- state
+
 st.session_state.setdefault("history", [])
 st.session_state.setdefault("turns", [])
 if "transcript" not in st.session_state:
@@ -241,38 +366,60 @@ if "transcript" not in st.session_state:
 
 primary_prompt, primary_tools = available_sets[primary_set]
 primary_artifact = build_artifact_version(version_label, primary_prompt, primary_tools)
-
-# Thanh version: luôn nhìn được đang chạy artifact nào và transcript nào.
-info_left, info_right = st.columns([3, 2])
-with info_left:
-    st.markdown(f"**artifact_version** · `{primary_artifact.artifact_version}`")
-    st.caption(f"prompt_hash `{primary_artifact.prompt_hash[:12]}` · tools_hash `{primary_artifact.tools_hash[:12]}`")
-with info_right:
-    st.markdown(f"**transcript** · `{st.session_state.transcript['transcript_id']}`")
-    st.caption(f"{len(st.session_state.transcript['turns'])} turn đã lưu · provider `{provider_name}`")
-
 declared_tools = [item["name"] for item in load_tool_declarations(primary_tools)]
-st.caption(f"{len(declared_tools)} tool đang khai báo: " + ", ".join(f"`{name}`" for name in declared_tools))
 
-st.divider()
+# Evidence panel: luôn nhìn được đang chạy artifact nào, transcript nào.
+with st.sidebar:
+    st.markdown("<div class='side-label'>Phiên hiện tại</div>", unsafe_allow_html=True)
+    st.code(primary_artifact.artifact_version, language=None)
+    st.caption(
+        f"prompt_hash `{primary_artifact.prompt_hash[:12]}` · "
+        f"tools_hash `{primary_artifact.tools_hash[:12]}`"
+    )
+    st.caption(f"transcript `{st.session_state.transcript['transcript_id']}`")
+    st.caption(f"{len(st.session_state.transcript['turns'])} turn đã lưu")
 
-# Lịch sử hội thoại đã render
+    with st.expander(f"🧰 {len(declared_tools)} tool đang khai báo"):
+        for name in declared_tools:
+            st.markdown(f"- `{name}`")
+
+    if st.session_state.transcript["turns"]:
+        st.download_button(
+            "⬇️ Tải transcript JSON",
+            data=json.dumps(st.session_state.transcript, ensure_ascii=False, indent=2, default=str),
+            file_name=f"{st.session_state.transcript['transcript_id']}.transcript.json",
+            mime="application/json",
+            use_container_width=True,
+        )
+
+# --------------------------------------------------------------------- main
+
+if not st.session_state.turns:
+    st.markdown(
+        "<div class='hero'><h1>Research Agent</h1>"
+        "<p>Tìm tin theo chủ đề hoặc theo tài khoản, đọc URL, rồi tổng hợp thành digest.</p></div>",
+        unsafe_allow_html=True,
+    )
+    columns = st.columns(len(SUGGESTIONS))
+    for column, suggestion in zip(columns, SUGGESTIONS):
+        if column.button(suggestion, use_container_width=True):
+            st.session_state.pending = suggestion
+            st.rerun()
+
 for turn in st.session_state.turns:
     with st.chat_message("user"):
         st.markdown(turn["user"])
     with st.chat_message("assistant"):
         if turn["compare"]:
             left, right = st.columns(2)
-            with left:
-                st.markdown(f"##### {turn['compare'][0]['label']}")
-                render_result(turn["compare"][0]["result"], turn["compare"][0]["artifact"])
-            with right:
-                st.markdown(f"##### {turn['compare'][1]['label']}")
-                render_result(turn["compare"][1]["result"], turn["compare"][1]["artifact"])
+            for column, side in zip((left, right), turn["compare"]):
+                with column:
+                    st.markdown(f"**{side['label']}**")
+                    render_result(side["result"], side["artifact"])
         else:
             render_result(turn["result"], turn["artifact"])
 
-user_text = st.chat_input("Hỏi agent...")
+user_text = st.chat_input("Hỏi agent...") or st.session_state.pop("pending", None)
 
 if user_text:
     started_at = now_iso()
@@ -291,7 +438,7 @@ if user_text:
             rendered: list[dict[str, Any]] = []
             for column, (label, prompt_path, tools_path, artifact) in zip(columns, sides):
                 with column:
-                    st.markdown(f"##### {label}")
+                    st.markdown(f"**{label}**")
                     with st.spinner("Đang chạy..."):
                         # So sánh chạy single-shot: history rỗng để hai bên cùng điều kiện.
                         result = run_agent(
@@ -349,14 +496,5 @@ if user_text:
                 )
             )
 
-    transcript_path = save_transcript()
-    st.caption(f"Transcript đã lưu: `{transcript_path.relative_to(ROOT)}`")
-
-if st.session_state.transcript["turns"]:
-    st.divider()
-    st.download_button(
-        "⬇️ Tải transcript JSON",
-        data=json.dumps(st.session_state.transcript, ensure_ascii=False, indent=2, default=str),
-        file_name=f"{st.session_state.transcript['transcript_id']}.transcript.json",
-        mime="application/json",
-    )
+    save_transcript()
+    st.rerun()
