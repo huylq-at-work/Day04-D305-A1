@@ -19,6 +19,16 @@ v0_B_base_openai_20260729T102246479705,v0,v0+peb1c8179815b+t6cdb53d5d7b8,base,M0
 v0_B_base_openai_20260729T102246479705,v0,v0+peb1c8179815b+t6cdb53d5d7b8,base,M04_clarify_then_url,True,missing_info,,fetch,fetch,True,True,True,
 v0_B_base_openai_20260729T102246479705,v0,v0+peb1c8179815b+t6cdb53d5d7b8,base,M05_correction_limit,True,wrong_arg_value,,timeline,timeline,True,True,True,
 v0_B_base_openai_20260729T102246479705,v0,v0+peb1c8179815b+t6cdb53d5d7b8,base,M06_switch_tool,True,wrong_tool,,lookup,lookup,True,True,True,
+v0_B_group_openai_20260729T110302534658,v0,v0+peb1c8179815b+t6cdb53d5d7b8,group,G01_url_with_topic_lure,False,wrong_tool,,fetch,fetch,True,True,True,
+v0_B_group_openai_20260729T110302534658,v0,v0+peb1c8179815b+t6cdb53d5d7b8,group,G02_top_and_limit_together,False,wrong_arg_value,,social_search,social_search,True,True,True,
+v0_B_group_openai_20260729T110302534658,v0,v0+peb1c8179815b+t6cdb53d5d7b8,group,G03_out_of_scope_translation,False,out_of_scope,unexpected_tool_call,no_tool,send,False,False,False,expected no tool call
+v0_B_group_openai_20260729T110302534658,v0,v0+peb1c8179815b+t6cdb53d5d7b8,group,G04_confirm_before_send_text,False,wrong_boundary,missing_tool_call,clarify,send,False,False,False,missing tool call clarify; extra tool call send
+v0_B_group_openai_20260729T110302534658,v0,v0+peb1c8179815b+t6cdb53d5d7b8,group,G05_missing_account_pronoun,False,missing_info,missing_tool_call,clarify,timeline,False,False,False,missing tool call clarify; extra tool call timeline
+v0_B_group_openai_20260729T110302534658,v0,v0+peb1c8179815b+t6cdb53d5d7b8,group,G06_switch_account_to_topic,True,wrong_tool,,social_search,social_search,True,True,True,
+v0_B_group_openai_20260729T110302534658,v0,v0+peb1c8179815b+t6cdb53d5d7b8,group,G07_widen_timeframe_after_correction,True,wrong_arg_value,wrong_arg_value,lookup,lookup,False,True,False,"query: expected 'AI', got 'tin tức AI'; topic: expected 'news', got None"
+v0_B_group_openai_20260729T110302534658,v0,v0+peb1c8179815b+t6cdb53d5d7b8,group,G08_cancelled_before_acting,True,unnecessary_tool,,no_tool,,True,True,True,
+v0_B_group_openai_20260729T110302534658,v0,v0+peb1c8179815b+t6cdb53d5d7b8,group,G09_missing_url_not_supplied_by_context,True,missing_info,missing_tool_call,clarify,send,False,False,False,missing tool call clarify; extra tool call send
+v0_B_group_openai_20260729T110302534658,v0,v0+peb1c8179815b+t6cdb53d5d7b8,group,G10_send_after_explicit_confirm,True,wrong_boundary,,send,send,True,True,True,
 v1_B_base_openai_20260729T111929884500,v1,v1+p24c5893dba66+t6cdb53d5d7b8,base,R01_user_tweets_routing,False,wrong_tool,,timeline,timeline,True,True,True,
 v1_B_base_openai_20260729T111929884500,v1,v1+p24c5893dba66+t6cdb53d5d7b8,base,R02_search_tweets_routing,False,wrong_tool,,social_search,social_search,True,True,True,
 v1_B_base_openai_20260729T111929884500,v1,v1+p24c5893dba66+t6cdb53d5d7b8,base,R03_web_news_routing,False,wrong_tool,,lookup,lookup,True,True,True,
@@ -89,3 +99,43 @@ v2_B_group_openai_20260729T113225368545,v2,v2+p24c5893dba66+t6fffa9ec6f83,group,
 v2_B_group_openai_20260729T113225368545,v2,v2+p24c5893dba66+t6fffa9ec6f83,group,G08_cancelled_before_acting,True,unnecessary_tool,,no_tool,,True,True,True,
 v2_B_group_openai_20260729T113225368545,v2,v2+p24c5893dba66+t6fffa9ec6f83,group,G09_missing_url_not_supplied_by_context,True,missing_info,,clarify,clarify,True,True,True,
 v2_B_group_openai_20260729T113225368545,v2,v2+p24c5893dba66+t6fffa9ec6f83,group,G10_send_after_explicit_confirm,True,wrong_boundary,,send,send,True,True,True,
+v2_B_group_openai_20260729T114922528868,v2,v2+p24c5893dba66+tcf6eac4369da,group,G01_extract_entities_usage,False,wrong_tool,,extract_entities,extract_entities,True,True,True,
+v2_B_group_openai_20260729T114922528868,v2,v2+p24c5893dba66+tcf6eac4369da,group,G02_rank_sources_usage,False,wrong_tool,provider_error,rank_sources,,False,False,False,TypeError: '<' not supported between instances of 'dict' and 'dict'
+v2_B_group_openai_20260729T114922528868,v2,v2+p24c5893dba66+tcf6eac4369da,group,G03_out_of_scope_translation,False,out_of_scope,,no_tool,,True,True,True,
+v2_B_group_openai_20260729T114922528868,v2,v2+p24c5893dba66+tcf6eac4369da,group,G04_confirm_before_send_text,False,wrong_boundary,,clarify,clarify,True,True,True,
+v2_B_group_openai_20260729T114922528868,v2,v2+p24c5893dba66+tcf6eac4369da,group,G05_missing_account_pronoun,False,missing_info,,clarify,clarify,True,True,True,
+v2_B_group_openai_20260729T114922528868,v2,v2+p24c5893dba66+tcf6eac4369da,group,G06_switch_account_to_topic,True,wrong_tool,,social_search,social_search,True,True,True,
+v2_B_group_openai_20260729T114922528868,v2,v2+p24c5893dba66+tcf6eac4369da,group,G07_widen_timeframe_after_correction,True,wrong_arg_value,wrong_arg_value,lookup,lookup,False,True,False,"query: expected 'AI', got 'tin tức AI'"
+v2_B_group_openai_20260729T114922528868,v2,v2+p24c5893dba66+tcf6eac4369da,group,G08_save_note_after_confirm,True,wrong_boundary,,save_note,save_note,True,True,True,
+v2_B_group_openai_20260729T114922528868,v2,v2+p24c5893dba66+tcf6eac4369da,group,G09_missing_url_not_supplied_by_context,True,missing_info,,clarify,clarify,True,True,True,
+v2_B_group_openai_20260729T114922528868,v2,v2+p24c5893dba66+tcf6eac4369da,group,G10_dedupe_tool_usage,False,wrong_tool,provider_error,dedupe,,False,False,False,TypeError: '<' not supported between instances of 'dict' and 'dict'
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,R01_user_tweets_routing,False,wrong_tool,,timeline,timeline,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,R02_search_tweets_routing,False,wrong_tool,,social_search,social_search,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,R03_web_news_routing,False,wrong_tool,,lookup,lookup,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,R04_read_url_routing,False,wrong_tool,,fetch,fetch,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,R05_limit_arg,False,wrong_arg_value,,timeline,timeline,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,R06_timeframe_arg,False,wrong_arg_value,,lookup,lookup,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,R07_search_type_arg,False,wrong_arg_value,,social_search,social_search,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,R08_out_of_scope,False,out_of_scope,,no_tool,,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,R09_no_tool_capability,False,unnecessary_tool,,no_tool,,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,R10_missing_handle,False,missing_info,,clarify,clarify,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,R11_missing_url,False,missing_info,,clarify,clarify,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,R12_confirm_before_send,False,wrong_boundary,,clarify,clarify,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,R13_parallel_web_and_tweets,False,wrong_tool,,lookup|social_search,lookup|social_search,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,R14_out_of_scope_coding,False,out_of_scope,,no_tool,,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,M01_clarify_then_fill,True,missing_info,,timeline,timeline,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,M02_carryover_timeframe,True,wrong_arg_value,,lookup,lookup,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,M03_correction_handle,True,wrong_arg_value,,timeline,timeline,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,M04_clarify_then_url,True,missing_info,,fetch,fetch,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,M05_correction_limit,True,wrong_arg_value,,timeline,timeline,True,True,True,
+v3_B_base_openai_20260729T115457350738,v3,v3+p24c5893dba66+tcf6eac4369da,base,M06_switch_tool,True,wrong_tool,,lookup,lookup,True,True,True,
+v3_B_group_openai_20260729T115636592135,v3,v3+p24c5893dba66+tcf6eac4369da,group,G01_extract_entities_usage,False,wrong_tool,,extract_entities,extract_entities,True,True,True,
+v3_B_group_openai_20260729T115636592135,v3,v3+p24c5893dba66+tcf6eac4369da,group,G02_rank_sources_usage,False,wrong_tool,extra_tool_call,rank_sources,rank_sources|dedupe,False,False,False,extra tool call dedupe
+v3_B_group_openai_20260729T115636592135,v3,v3+p24c5893dba66+tcf6eac4369da,group,G03_out_of_scope_translation,False,out_of_scope,,no_tool,,True,True,True,
+v3_B_group_openai_20260729T115636592135,v3,v3+p24c5893dba66+tcf6eac4369da,group,G04_confirm_before_send_text,False,wrong_boundary,,clarify,clarify,True,True,True,
+v3_B_group_openai_20260729T115636592135,v3,v3+p24c5893dba66+tcf6eac4369da,group,G05_missing_account_pronoun,False,missing_info,,clarify,clarify,True,True,True,
+v3_B_group_openai_20260729T115636592135,v3,v3+p24c5893dba66+tcf6eac4369da,group,G06_switch_account_to_topic,True,wrong_tool,,social_search,social_search,True,True,True,
+v3_B_group_openai_20260729T115636592135,v3,v3+p24c5893dba66+tcf6eac4369da,group,G07_widen_timeframe_after_correction,True,wrong_arg_value,wrong_arg_value,lookup,lookup,False,True,False,"query: expected 'AI', got 'tin tức AI'"
+v3_B_group_openai_20260729T115636592135,v3,v3+p24c5893dba66+tcf6eac4369da,group,G08_save_note_after_confirm,True,wrong_boundary,,save_note,save_note,True,True,True,
+v3_B_group_openai_20260729T115636592135,v3,v3+p24c5893dba66+tcf6eac4369da,group,G09_missing_url_not_supplied_by_context,True,missing_info,,clarify,clarify,True,True,True,
+v3_B_group_openai_20260729T115636592135,v3,v3+p24c5893dba66+tcf6eac4369da,group,G10_dedupe_tool_usage,True,wrong_tool,wrong_arg_value,dedupe,dedupe,False,True,False,"key: expected 'title', got None"

@@ -23,7 +23,10 @@
             "name": "extract_entities",
             "args": {
               "text": "Hôm qua Sam Altman của OpenAI và Bill Gates từ Microsoft đã gặp nhau.",
-              "kinds": ["person", "organization"]
+              "kinds": [
+                "person",
+                "organization"
+              ]
             }
           }
         ]
@@ -45,10 +48,6 @@
           {
             "name": "rank_sources",
             "args": {
-              "items": [
-                { "title": "Bài A", "url": "abc.com" },
-                { "title": "Bài B", "url": "def.com" }
-              ],
               "min_tier": 1
             }
           }
@@ -57,7 +56,7 @@
       "metadata": {
         "skill": "use_rank_sources_tool",
         "difficulty": "hard",
-        "what_it_tests": "Agent phải truyền đúng mảng items và min_tier=1 vào tool rank_sources."
+        "what_it_tests": "User yeu cau loc nguon Tier 1 -> goi rank_sources voi min_tier=1. Khong cham items vi model co the dien them field optional theo schema."
       }
     },
     {
@@ -247,35 +246,32 @@
       "id": "G10_dedupe_tool_usage",
       "phase": "B",
       "suite": "group",
-      "case_suite": "group",
-      "is_multiturn": false,
       "metadata": {
         "skill": "use_dedupe_tool",
         "difficulty": "medium",
-        "what_it_tests": "Kiểm tra xem AI có tự động gọi tool dedupe với key='title' khi người dùng yêu cầu lọc các bài báo bị trùng tên hay không."
+        "what_it_tests": "User dua danh sach qua nhieu luot roi yeu cau loc trung TEN -> dedupe voi key=title (khong phai default url). Khong cham items."
       },
-      "input": "Mình có danh sách bài báo này: 1 bài tên 'GPT-5 ra mắt' (link abc.com), và 1 bài khác cũng tên 'GPT-5 ra mắt' (link xyz.com). Bạn gộp các bài trùng tên lại giúp mình nhé.",
       "failure_type": "wrong_tool",
       "expect": {
         "tool_calls": [
           {
             "name": "dedupe",
             "args": {
-              "items": [
-                {
-                  "title": "GPT-5 ra mắt",
-                  "url": "abc.com"
-                },
-                {
-                  "title": "GPT-5 ra mắt",
-                  "url": "xyz.com"
-                }
-              ],
               "key": "title"
             }
           }
         ]
-      }
+      },
+      "turns": [
+        {
+          "role": "user",
+          "content": "Mình gom được 2 bài báo: một bài tên 'GPT-5 ra mắt' ở link abc.com, và một bài khác cũng tên 'GPT-5 ra mắt' ở link xyz.com"
+        },
+        {
+          "role": "user",
+          "content": "Bạn gộp các bài trùng tên lại giúp mình nhé"
+        }
+      ]
     }
   ]
 }

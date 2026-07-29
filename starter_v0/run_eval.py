@@ -101,7 +101,15 @@ def normalize_value(value: Any) -> Any:
     if isinstance(value, str):
         return value.strip().lower()
     if isinstance(value, list):
-        return sorted(normalize_value(item) for item in value)
+        normalized = [normalize_value(item) for item in value]
+        try:
+            return sorted(normalized)
+        except TypeError:
+            # List chua dict (vi du args.items cua dedupe/rank_sources) khong so sanh
+            # truc tiep duoc -> sort theo JSON de on dinh thay vi crash ca case.
+            return sorted(normalized, key=lambda item: json.dumps(item, ensure_ascii=False, sort_keys=True, default=str))
+    if isinstance(value, dict):
+        return {key: normalize_value(item) for key, item in value.items()}
     return value
 
 
