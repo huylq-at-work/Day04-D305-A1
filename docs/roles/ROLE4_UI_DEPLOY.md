@@ -73,6 +73,36 @@ nhau — đó là cách rẻ nhất để đạt điểm 4.
 
 ## Nhiệm vụ
 
+## Trạng thái: T1 và T2 đã xong
+
+[`starter_v0/app.py`](../../starter_v0/app.py) đã được implement và smoke-test:
+server lên `http://localhost:8501`, submit query render đúng, provider error được bắt và
+hiển thị thay vì crash, transcript ghi ra `transcripts/*.transcript.json` đúng schema.
+
+Chạy:
+
+```bash
+cd D:\VinUni\Lab04\Day04-2A202601821-LeQuangHuy\starter_v0 && .venv\Scripts\streamlit.exe run app.py
+```
+
+Những gì app.py đang có:
+
+| Tiêu chí chấm | Đã có |
+| :-- | :-- |
+| Request + response cuối | chat message, kèm `status` |
+| Trace từng tool | expander theo round: tên tool, args, status icon, result/error |
+| artifact_version / transcript | thanh header hiện `artifact_version`, `prompt_hash`, `tools_hash`, `transcript_id` |
+| Cùng scenario qua nhiều version | toggle **Chế độ so sánh 2 version** — chạy song song 2 bộ artifact |
+
+Chế độ so sánh quét `artifacts/versions/<label>/`. **Cần R1 snapshot mỗi version vào đó**,
+nếu không selectbox chỉ có bản `live`. Chế độ này chạy single-shot (history rỗng cho cả hai
+bên) để hai version cùng điều kiện.
+
+Còn lại: **T3 deploy**, **T4 live chat**, **T5 integrator**.
+
+<details>
+<summary>Hướng dẫn gốc để dựng lại từ đầu (giữ để tham khảo)</summary>
+
 ### T1 — Dựng khung UI (09:40–10:15)
 
 Thêm vào `requirements.txt`:
@@ -166,6 +196,8 @@ from chat import write_transcript, now_iso
 
 Transcript phải có `artifact_version`, `provider`, `model`, và list `turns` với đủ `rounds`
 và `tool_events`.
+
+</details>
 
 ### T3 — Deploy (deadline 11:30)
 
