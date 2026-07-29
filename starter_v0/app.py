@@ -34,6 +34,9 @@ TRANSCRIPTS_DIR = ROOT / "transcripts"
 
 load_lab_env(ROOT)
 
+# v0 là baseline, v1–v3 là ba vòng tối ưu bắt buộc, v4 để dành nếu nhóm chạy thêm.
+VERSION_LABELS = ["v0", "v1", "v2", "v3", "v4"]
+
 SUGGESTIONS = [
     "Tin tức AI hôm nay có gì nổi bật?",
     "Tweet mới nhất của Sam Altman là gì?",
@@ -230,7 +233,7 @@ with st.sidebar:
     model = st.text_input("Model", "", placeholder="Model (trống = default)", label_visibility="collapsed")
 
     st.markdown("<div class='side-label'>Artifact</div>", unsafe_allow_html=True)
-    version_label = st.text_input("Version", "v0", placeholder="v0", label_visibility="collapsed")
+    version_label = st.selectbox("Version", VERSION_LABELS, index=0, label_visibility="collapsed")
     primary_set = st.selectbox("Bộ artifact", list(available_sets), index=0, label_visibility="collapsed")
     compare_mode = st.toggle(
         "So sánh 2 version",
