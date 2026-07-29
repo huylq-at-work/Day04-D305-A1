@@ -6,3 +6,5 @@ __pycache__/
 .env.*
 !.env.example
 arxiv_papers/
+# save_note ghi ra day; la output runtime, khong phai artifact nop bai
+notes/
