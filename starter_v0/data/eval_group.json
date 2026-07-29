@@ -12,49 +12,52 @@
   ],
   "cases": [
     {
-      "id": "G01_url_with_topic_lure",
+      "id": "G01_extract_entities_usage",
       "phase": "B",
       "suite": "group",
-      "query": "Bài này nói gì về Gemini vậy bạn: https://blog.google/technology/ai/google-gemini-ai/",
+      "query": "Bóc tách giúp mình tên người và tên tổ chức từ đoạn sau: 'Hôm qua Sam Altman của OpenAI và Bill Gates từ Microsoft đã gặp nhau.'",
       "failure_type": "wrong_tool",
       "expect": {
         "tool_calls": [
           {
-            "name": "fetch",
+            "name": "extract_entities",
             "args": {
-              "url": "https://blog.google/technology/ai/google-gemini-ai/"
+              "text": "Hôm qua Sam Altman của OpenAI và Bill Gates từ Microsoft đã gặp nhau.",
+              "kinds": ["person", "organization"]
             }
           }
         ]
       },
       "metadata": {
-        "skill": "routing_url_over_search",
+        "skill": "use_extract_entities_tool",
         "difficulty": "medium",
-        "what_it_tests": "Câu vừa có URL cụ thể vừa có từ khóa chủ đề (Gemini) làm mồi nhử sang lookup; đã có link thì phải đọc đúng link đó bằng fetch và không tìm kiếm thêm."
+        "what_it_tests": "Agent phải gọi extract_entities với text và kinds tương ứng để bóc tách thông tin thay vì tự trả lời chay."
       }
     },
     {
-      "id": "G02_top_and_limit_together",
+      "id": "G02_rank_sources_usage",
       "phase": "B",
       "suite": "group",
-      "query": "Cho mình 10 bài đăng được chia sẻ nhiều nhất về Llama 4",
-      "failure_type": "wrong_arg_value",
+      "query": "Mình có 2 bài báo: bài 1 (link: abc.com, title: Bài A) và bài 2 (link: def.com, title: Bài B). Lọc cho mình các nguồn thuộc Tier 1 nhé.",
+      "failure_type": "wrong_tool",
       "expect": {
         "tool_calls": [
           {
-            "name": "social_search",
+            "name": "rank_sources",
             "args": {
-              "query": "Llama 4",
-              "search_type": "Top",
-              "limit": 10
+              "items": [
+                { "title": "Bài A", "url": "abc.com" },
+                { "title": "Bài B", "url": "def.com" }
+              ],
+              "min_tier": 1
             }
           }
         ]
       },
       "metadata": {
-        "skill": "arg_search_type_and_limit",
+        "skill": "use_rank_sources_tool",
         "difficulty": "hard",
-        "what_it_tests": "Phải trích đồng thời hai argument từ một câu: 'được chia sẻ nhiều nhất' -> search_type=Top và '10 bài' -> limit=10, đồng thời giữ query gọn là 'Llama 4' chứ không nhét cả câu vào."
+        "what_it_tests": "Agent phải truyền đúng mảng items và min_tier=1 vào tool rank_sources."
       }
     },
     {
@@ -179,31 +182,36 @@
       }
     },
     {
-      "id": "G08_cancelled_before_acting",
+      "id": "G08_save_note_after_confirm",
       "phase": "B",
       "suite": "group",
       "turns": [
         {
           "role": "user",
-          "content": "Tìm giúp mình tin AI hôm nay"
+          "content": "Lưu nội dung '# Báo cáo' vào file bao_cao giúp mình."
         },
         {
           "role": "user",
-          "content": "Thôi khoan đã"
-        },
-        {
-          "role": "user",
-          "content": "Trước khi tìm, nhắc lại giúp mình yêu cầu ban đầu của mình là gì"
+          "content": "Ừ, mình đồng ý cho phép ghi file."
         }
       ],
-      "failure_type": "unnecessary_tool",
+      "failure_type": "wrong_boundary",
       "expect": {
-        "no_tool": true
+        "tool_calls": [
+          {
+            "name": "save_note",
+            "args": {
+              "markdown": "# Báo cáo",
+              "filename": "bao_cao",
+              "confirmed": true
+            }
+          }
+        ]
       },
       "metadata": {
-        "skill": "no_tool_after_cancel",
-        "difficulty": "medium",
-        "what_it_tests": "User đã dừng yêu cầu tìm kiếm và lượt cuối chỉ hỏi lại nội dung hội thoại. Agent phải trả lời trực tiếp, không được chạy lại tool của lượt đầu."
+        "skill": "use_save_note_tool",
+        "difficulty": "hard",
+        "what_it_tests": "Sau khi user xác nhận, agent phải gọi save_note với tham số confirmed=true."
       }
     },
     {
